@@ -21,3 +21,12 @@ target_include_directories(rubiks_cube_core
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
+
+add_executable(rubiks_cube_ai_solver
+    src/main.cpp
+)
+
+target_link_libraries(rubiks_cube_ai_solver
+    PRIVATE
+        rubiks_cube_core
+)

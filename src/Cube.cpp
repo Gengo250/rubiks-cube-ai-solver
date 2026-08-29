@@ -21,4 +21,8 @@ Cube::Cube(){
   faces[left].fill(Color::Orange);
 }
 
+Color Cube::getColor(Face face, std::size_t position) const {
+  std::size_t faceIndex = static_cast<std::size_t>(face);
 
+  return faces[faceIndex][position];
+}

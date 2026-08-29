@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
 
 enum class Color { 
   White, 
@@ -22,6 +23,8 @@ class Cube {
  public:
 
   Cube();
+
+  Color getColor(Face face, std::size_t position) const;
 
  private:
   static constexpr int FACE_SIZE = 2;
