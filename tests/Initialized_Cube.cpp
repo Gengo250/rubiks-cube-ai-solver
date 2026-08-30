@@ -1,8 +1,9 @@
+#include "Initialized_Cube.hpp"
 #include "Cube.hpp"
 #include <iostream>
 #include <cassert>
 
-int main (int argc, char *argv[]) {
+void testInicializedCube() {
   Cube cube;
 
   assert(cube.getColor(Face::Upper,0) == Color::White);
@@ -14,5 +15,4 @@ int main (int argc, char *argv[]) {
   
   std::cout << "Cube initialized correctly\n";
 
-  return 0;
 }

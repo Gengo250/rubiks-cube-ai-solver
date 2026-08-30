@@ -1,11 +1,17 @@
-#include "Cube.hpp"
-#include "CubeRenderer.hpp"
-#include <cassert>
+#include "Menu.hpp"
+#include <iostream>
 
 int main (int argc, char *argv[]) {
-  Cube cube; 
-  CubeRenderer::render(cube);
-  
+  Menu menu;
+
+  int index = 0;
+
+  do {
+    menu.menu_text();
+    std::cin >> index;
+    menu.inicializated_Menu(index);
+
+  }while (index);
 
   return 0;
 }
