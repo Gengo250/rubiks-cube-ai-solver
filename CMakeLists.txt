@@ -15,6 +15,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_library(rubiks_cube_core
     src/Cube.cpp
+    src/CubeRenderer.cpp
 )
 
 target_include_directories(rubiks_cube_core
