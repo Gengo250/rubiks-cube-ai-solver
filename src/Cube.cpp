@@ -86,3 +86,37 @@ void Cube::moveLeftClockwise() {
   faces[front][0] = upperRearLeft;
   faces[front][2] = upperFrontLeft;
 }
+
+
+void Cube::moveFrontCounterclockwise() {
+  std::size_t front = static_cast<std::size_t>(Face::Front);
+  std::size_t upper = static_cast<std::size_t>(Face::Upper);
+  std::size_t lower = static_cast<std::size_t>(Face::Lower);
+  std::size_t right = static_cast<std::size_t>(Face::Right);
+  std::size_t left = static_cast<std::size_t>(Face::Left);
+
+
+  auto oldFront = faces[front];
+  auto oldUpper = faces[upper];
+  auto oldLower = faces[lower];
+  auto oldRight = faces[right];
+  auto oldLeft  = faces[left];
+
+  faces[front][0] = oldFront[1];
+  faces[front][1] = oldFront[3];
+  faces[front][2] = oldFront[0];
+  faces[front][3] = oldFront[2];
+
+  faces[upper][2] = oldRight[0];
+  faces[upper][3] = oldRight[2];
+
+  faces[left][1] = oldUpper[3];
+  faces[left][3] = oldUpper[2];
+
+  faces[lower][0] = oldLeft[1];
+  faces[lower][1] = oldLeft[3];
+
+  faces[right][0] = oldLower[0];
+  faces[right][2] = oldLower[1];
+}
+
