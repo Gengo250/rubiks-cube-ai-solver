@@ -26,6 +26,8 @@ class Cube {
 
   Color getColor(Face face, std::size_t position) const;
 
+  void moveFrontClockwise();
+  
  private:
   static constexpr int FACE_SIZE = 2;
   static constexpr int FACE_COUNT = 6;
