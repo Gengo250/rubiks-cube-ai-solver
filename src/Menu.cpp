@@ -16,6 +16,8 @@ void Menu::menu_text() {
   std::cout << "3 - Move Front Clockwise" << '\n';
   std::cout << "4 - Move Left Clockwise" << '\n';
   std::cout << "5 - Move Front Counterclockwise" << '\n';
+  std::cout << "6 - Move Right Clockwise" << '\n';
+  std::cout << "7 - Move Right Counterclockwise " << '\n';
 
   std::cout << "Choice: ";
 }
@@ -47,6 +49,16 @@ void Menu::inicializated_Menu(int index) {
     case 5:
       cube.moveFrontCounterclockwise();
       std::cout << "Front face moved Counterclockwise" << '\n';
+      CubeRenderer::render(cube);
+      break;
+    case 6:
+      cube.moveRightClockwise();
+      std::cout << "Right face moved clockwise"  << '\n';
+      CubeRenderer::render(cube);
+      break;
+    case 7:
+      cube.moveRightCounterclockwise();
+      std::cout << "Right face moved Counterclockwise" << '\n';
       CubeRenderer::render(cube);
       break;
     default:
