@@ -129,11 +129,11 @@ void Cube::moveRightClockwise(){
   std::size_t left = static_cast<std::size_t>(Face::Left);
   std::size_t rear = static_cast<std::size_t>(Face::Rear);
 
- Color tempoRight = faces[right][0];
+  Color temp = faces[right][0];
+  faces[right][0] = faces[right][2];
   faces[right][2] = faces[right][3];
-  faces[right][1] = faces[right][2];
-  faces[right][0] = faces[right][1];
-  faces[right][3] = tempoRight;
+  faces[right][3] = faces[right][1];
+  faces[right][1] = temp;
   
 
   Color templowerH = faces[lower][1];
@@ -164,11 +164,11 @@ void Cube::moveRightCounterclockwise(){
   std::size_t rear = static_cast<std::size_t>(Face::Rear);
 
 
-  Color tempoRight = faces[right][0];
+  Color temp = faces[right][0];
+  faces[right][0] = faces[right][1];
+  faces[right][1] = faces[right][3];
   faces[right][3] = faces[right][2];
-  faces[right][2] = faces[right][1];
-  faces[right][0] = faces[right][3];
-  faces[right][1] = tempoRight;
+  faces[right][2] = temp;
 
   Color tempupperH = faces[upper][1];
   Color tempupperL = faces[upper][3];
@@ -186,3 +186,6 @@ void Cube::moveRightCounterclockwise(){
   faces[front][3] = tempupperL;
 
 }
+
+
+
