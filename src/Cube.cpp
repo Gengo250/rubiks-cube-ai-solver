@@ -281,3 +281,64 @@ void Cube::moveTopCounterclockwise(){
   faces[left][0] = tempRear0;
   faces[left][1] = tempRear1;
 }
+
+void Cube::moveLowerClockwise(){
+  std::size_t front = static_cast<std::size_t>(Face::Front);
+  std::size_t lower = static_cast<std::size_t>(Face::Lower);
+  std::size_t right = static_cast<std::size_t>(Face::Right);
+  std::size_t left = static_cast<std::size_t>(Face::Left);
+  std::size_t rear = static_cast<std::size_t>(Face::Rear);
+
+  Color temp = faces[lower][0];
+
+  faces[lower][0] = faces[lower][2];
+  faces[lower][2] = faces[lower][3];
+  faces[lower][3] = faces[lower][1];
+  faces[lower][1] = temp;
+
+  Color tempFront2 = faces[front][2];
+  Color tempFront3 = faces[front][3];
+
+  faces[front][2] = faces[left][2];
+  faces[front][3] = faces[left][3];
+
+  faces[left][2] = faces[rear][2];
+  faces[left][3] = faces[rear][3];
+
+  faces[rear][2] = faces[right][2];
+  faces[rear][3] = faces[right][3];
+
+  faces[right][2] = tempFront2;
+  faces[right][3] = tempFront3;
+}
+
+void Cube::moveLowerCounterclockwise(){
+  std::size_t front = static_cast<std::size_t>(Face::Front);
+  std::size_t lower = static_cast<std::size_t>(Face::Lower);
+  std::size_t right = static_cast<std::size_t>(Face::Right);
+  std::size_t left = static_cast<std::size_t>(Face::Left);
+  std::size_t rear = static_cast<std::size_t>(Face::Rear);
+
+  Color temp = faces[lower][0];
+
+  faces[lower][0] = faces[lower][1];
+  faces[lower][1] = faces[lower][3];
+  faces[lower][3] = faces[lower][2];
+  faces[lower][2] = temp;
+
+  Color tempFront2 = faces[front][2];
+  Color tempFront3 = faces[front][3];
+
+  faces[front][2] = faces[right][2];
+  faces[front][3] = faces[right][3];
+
+  faces[right][2] = faces[rear][2];
+  faces[right][3] = faces[rear][3];
+
+  faces[rear][2] = faces[left][2];
+  faces[rear][3] = faces[left][3];
+
+  faces[left][2] = tempFront2;
+  faces[left][3] = tempFront3;
+
+}
