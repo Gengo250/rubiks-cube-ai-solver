@@ -1,17 +1,23 @@
 #include "Menu.hpp"
-#include <iostream>
+#include "MenuRenderer.hpp"
 
 int main (int argc, char *argv[]) {
   Menu menu;
+  MenuRenderer renderer;
 
-  int index = 0;
+  while (!renderer.shouldClose()) {
+    const int index = renderer.drawFrame();
 
-  do {
-    menu.menu_text();
-    std::cin >> index;
+    if (index == MenuRenderer::NO_CHOICE) {
+      continue;
+    }
+
     menu.inicializated_Menu(index);
 
-  }while (index);
+    if (index == 0) {
+      break;
+    }
+  }
 
   return 0;
 }
