@@ -36,6 +36,8 @@ class Cube {
   void  moveTopCounterclockwise();
   void  moveLowerClockwise();
   void moveLowerCounterclockwise();
+  void MoveRearClockwise();
+  void MoveRearCounterClockwise();
 
  private:
   static constexpr int FACE_SIZE = 2;
