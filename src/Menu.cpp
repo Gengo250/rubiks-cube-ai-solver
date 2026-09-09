@@ -26,6 +26,7 @@ void Menu::menu_text() {
   std::cout << "13 - Move Rear Clockwise" << '\n' ;
   std::cout << "14 - Move Rear Counterclockwise" << '\n' ;
   std::cout << "15 - Check if cube is solved" << '\n';
+  std::cout << "16 - Reset Cube" << '\n';
 
   std::cout << "Choice: ";
 }
@@ -110,6 +111,11 @@ void Menu::inicializated_Menu(int index) {
       } else {
         std::cout << "The cube is not solved." << '\n';
       }
+      break;
+    case 16:
+      cube = Cube();
+      std::cout << "Cube reset successfully." << '\n';
+      CubeRenderer::render(cube);
       break;
       
     default:
