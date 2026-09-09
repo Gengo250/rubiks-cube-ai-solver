@@ -406,3 +406,17 @@ void Cube::MoveRearCounterClockwise(){
   faces[lower][3] = RightUp;
   
 }
+
+bool Cube::isSolved() const {
+  for (const auto& face : faces) {
+    Color firstColor = face[0];
+
+    for (const Color color : face) {
+      if (color != firstColor) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}

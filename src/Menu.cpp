@@ -25,6 +25,7 @@ void Menu::menu_text() {
   std::cout << "12 - Move Lower Counterclockwise" << '\n';
   std::cout << "13 - Move Rear Clockwise" << '\n' ;
   std::cout << "14 - Move Rear Counterclockwise" << '\n' ;
+  std::cout << "15 - Check if cube is solved" << '\n';
 
   std::cout << "Choice: ";
 }
@@ -103,7 +104,13 @@ void Menu::inicializated_Menu(int index) {
       std::cout << "Rear face moved counterclockwise." << '\n';
       CubeRenderer::render(cube);
       break;
-
+    case 15:
+      if (cube.isSolved()) {
+        std::cout << "The cube is solved!" << '\n';
+      } else {
+        std::cout << "The cube is not solved." << '\n';
+      }
+      break;
       
     default:
       std::cout << "Invalid option!" << '\n';

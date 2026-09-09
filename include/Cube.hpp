@@ -39,6 +39,8 @@ class Cube {
   void MoveRearClockwise();
   void MoveRearCounterClockwise();
 
+  bool isSolved() const;
+
  private:
   static constexpr int FACE_SIZE = 2;
   static constexpr int FACE_COUNT = 6;
