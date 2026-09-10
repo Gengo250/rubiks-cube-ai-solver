@@ -24,6 +24,11 @@ class MenuRenderer {
   // Retorna o indice da opcao escolhida neste frame, ou NO_CHOICE.
   int drawFrame(const CubeSnapshot& cube);
 
+  // Liga o desenho do cubo no painel direito.
+  // Chamado quando o usuario escolhe "Render Cube": o cubo passa a ser
+  // desenhado na janela, e nao impresso no terminal.
+  void showCube();
+
   // --- Constantes de layout: mexa aqui para personalizar o visual ---
   static constexpr int WINDOW_WIDTH = 1810;
   static constexpr int WINDOW_HEIGHT = 1000;
@@ -60,6 +65,7 @@ class MenuRenderer {
   void drawMenuPanel() const;
   void drawCubePanel(const CubeSnapshot& cube) const;
 
-  int selected;  // opcao destacada (navegacao por teclado/mouse)
-  int choice;    // opcao confirmada neste frame
+  int selected;     // opcao destacada (navegacao por teclado/mouse)
+  int choice;       // opcao confirmada neste frame
+  bool cubeVisible; // true depois que "Render Cube" foi escolhido
 };
