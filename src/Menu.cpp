@@ -26,7 +26,8 @@ void Menu::inicializated_Menu(int index) {
       break;
 
     case 1:
-      CubeRenderer::render(cube);
+      // O desenho acontece na janela (painel direito do MenuRenderer),
+      // por isso esta opcao nao imprime nada no terminal.
       break;
 
     case 2:

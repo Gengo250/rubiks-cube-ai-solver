@@ -174,7 +174,8 @@ void drawNetFace(const NetFace& face, const CubeSnapshot& cube) {
 
 }  // namespace
 
-MenuRenderer::MenuRenderer() : selected(0), choice(NO_CHOICE) {
+MenuRenderer::MenuRenderer()
+    : selected(0), choice(NO_CHOICE), cubeVisible(false) {
   InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "MENU - CUBE 2X2X2");
   SetTargetFPS(TARGET_FPS);
 
@@ -202,6 +203,8 @@ MenuRenderer::~MenuRenderer() {
 }
 
 bool MenuRenderer::shouldClose() const { return WindowShouldClose(); }
+
+void MenuRenderer::showCube() { cubeVisible = true; }
 
 int MenuRenderer::drawFrame(const CubeSnapshot& cube) {
   choice = NO_CHOICE;
@@ -293,8 +296,14 @@ void MenuRenderer::drawCubePanel(const CubeSnapshot& cube) const {
                "terminal.",
                VIEW_PANEL_X + MARGIN, HINT_Y, HINT_FONT_SIZE, HINT_COLOR);
 
-  for (const NetFace& face : NET_FACES) {
-    drawNetFace(face, cube);
+  if (cubeVisible) {
+    for (const NetFace& face : NET_FACES) {
+      drawNetFace(face, cube);
+    }
+  } else {
+    drawMenuText("Escolha \"1 - Render Cube\" para desenhar o cubo aqui.",
+                 VIEW_PANEL_X + MARGIN, WINDOW_HEIGHT / 2, ITEM_FONT_SIZE,
+                 HINT_COLOR);
   }
 
   EndScissorMode();

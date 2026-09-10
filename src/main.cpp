@@ -20,6 +20,11 @@ int main (int argc, char *argv[]) {
     menu.inicializated_Menu(index);
     snapshot = makeCubeSnapshot(menu.getCube());
 
+    // "Render Cube": passa a desenhar o cubo no painel direito da janela.
+    if (index == 1) {
+      renderer.showCube();
+    }
+
     if (index == 0) {
       break;
     }
