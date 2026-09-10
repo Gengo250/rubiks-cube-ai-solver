@@ -1,17 +1,29 @@
+#include "CubeSnapshot.hpp"
 #include "Menu.hpp"
-#include <iostream>
+#include "MenuRenderer.hpp"
 
 int main (int argc, char *argv[]) {
   Menu menu;
+  MenuRenderer renderer;
 
-  int index = 0;
+  // Copia do estado do cubo desenhada no painel direito.
+  // So precisa ser refeita depois de um movimento.
+  CubeSnapshot snapshot = makeCubeSnapshot(menu.getCube());
 
-  do {
-    menu.menu_text();
-    std::cin >> index;
+  while (!renderer.shouldClose()) {
+    const int index = renderer.drawFrame(snapshot);
+
+    if (index == MenuRenderer::NO_CHOICE) {
+      continue;
+    }
+
     menu.inicializated_Menu(index);
+    snapshot = makeCubeSnapshot(menu.getCube());
 
-  }while (index);
+    if (index == 0) {
+      break;
+    }
+  }
 
   return 0;
 }

@@ -2,6 +2,7 @@
 
 #include "CubeRenderer.hpp"
 #include "Initialized_Cube.hpp"
+#include "MenuOptions.hpp"
 
 #include <iostream>
 
@@ -10,21 +11,10 @@ Menu::Menu() {}
 void Menu::menu_text() {
   std::cout << '\n';
   std::cout << "MENU - CUBE 2X2X2" << '\n';
-  std::cout << "0 - Finish" << '\n';
-  std::cout << "1 - Render Cube" << '\n';
-  std::cout << "2 - Test initialized Cube" << '\n';
-  std::cout << "3 - Move Front Clockwise" << '\n';
-  std::cout << "4 - Move Left Clockwise" << '\n';
-  std::cout << "5 - Move Front Counterclockwise" << '\n';
-  std::cout << "6 - Move Right Clockwise" << '\n';
-  std::cout << "7 - Move Right Counterclockwise " << '\n';
-  std::cout << "8 - Move Left Counterclockwise" << '\n';
-  std::cout << "9 - Move Top Clockwise" << '\n';
-  std::cout << "10 - Move Top Couterclockwise" << '\n';
-  std::cout << "11 - Move Lower Clockwise" << '\n';
-  std::cout << "12 - Move Lower Counterclockwise" << '\n';
-  std::cout << "13 - Move Rear Clockwise" << '\n' ;
-  std::cout << "14 - Move Rear Counterclockwise" << '\n' ;
+
+  for (const MenuOption& option : MENU_OPTIONS) {
+    std::cout << option.index << " - " << option.label << '\n';
+  }
 
   std::cout << "Choice: ";
 }
