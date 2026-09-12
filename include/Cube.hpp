@@ -26,6 +26,8 @@ class Cube {
 
   Color getColor(Face face, std::size_t position) const;
 
+  void shuffle();
+
   void moveFrontClockwise();
   void moveLeftClockwise();
   void moveFrontCounterclockwise();

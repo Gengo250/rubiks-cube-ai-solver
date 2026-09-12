@@ -18,7 +18,7 @@ inline constexpr std::size_t MENU_OPTION_COUNT = 15;
 inline constexpr std::array<MenuOption, MENU_OPTION_COUNT> MENU_OPTIONS = {{
     {0, "Finish"},
     {1, "Render Cube"},
-    {2, "Test initialized Cube"},
+    {2, "Shuffle Cube"},
     {3, "Move Front Clockwise"},
     {4, "Move Left Clockwise"},
     {5, "Move Front Counterclockwise"},

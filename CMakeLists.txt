@@ -22,7 +22,6 @@ add_library(rubiks_cube_core
     src/CubeSnapshot.cpp
     src/Menu.cpp
     src/MenuRenderer.cpp
-    tests/Initialized_Cube.cpp
 )
 
 target_include_directories(rubiks_cube_core

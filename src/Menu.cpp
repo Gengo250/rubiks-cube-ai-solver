@@ -1,7 +1,6 @@
 #include "Menu.hpp"
 
 #include "CubeRenderer.hpp"
-#include "Initialized_Cube.hpp"
 #include "MenuOptions.hpp"
 
 #include <iostream>
@@ -31,7 +30,9 @@ void Menu::inicializated_Menu(int index) {
       break;
 
     case 2:
-      testInicializedCube();
+      cube.shuffle();
+      std::cout << "Cube shuffled." << '\n';
+      CubeRenderer::render(cube);
       break;
 
     case 3:

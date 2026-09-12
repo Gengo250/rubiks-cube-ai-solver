@@ -1,5 +1,7 @@
 #include "Cube.hpp"
+#include <array>
 #include <cstddef>
+#include <random>
 
 Cube::Cube() {
   auto upper = static_cast<std::size_t>(Face::Upper);
@@ -25,6 +27,26 @@ Color Cube::getColor(Face face, std::size_t position) const {
   std::size_t faceIndex = static_cast<std::size_t>(face);
 
   return faces[faceIndex][position];
+}
+
+void Cube::shuffle() {
+  // Aplica uma sequencia de giros sorteados entre os 12 movimentos do cubo.
+  using Move = void (Cube::*)();
+  static constexpr std::array<Move, 12> MOVES = {
+      &Cube::moveFrontClockwise, &Cube::moveFrontCounterclockwise,
+      &Cube::MoveRearClockwise,  &Cube::MoveRearCounterClockwise,
+      &Cube::moveRightClockwise, &Cube::moveRightCounterclockwise,
+      &Cube::moveLeftClockwise,  &Cube::moveLeftCounterclockwise,
+      &Cube::moveTopClockwise,   &Cube::moveTopCounterclockwise,
+      &Cube::moveLowerClockwise, &Cube::moveLowerCounterclockwise,
+  };
+
+  static std::mt19937 engine{std::random_device{}()};
+  std::uniform_int_distribution<std::size_t> pick(0, MOVES.size() - 1);
+
+  for (int i = 0; i < 20; ++i) {
+    (this->*MOVES[pick(engine)])();
+  }
 }
 
 void Cube::moveFrontClockwise() {
