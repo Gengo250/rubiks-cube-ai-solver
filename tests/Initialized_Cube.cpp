@@ -6,12 +6,12 @@
 void testInicializedCube() {
   Cube cube;
 
-  assert(cube.getColor(Face::Upper,0) == Color::White);
-  assert(cube.getColor(Face::Lower,0) == Color::Yellow);
-  assert(cube.getColor(Face::Front,0) == Color::Green);
-  assert(cube.getColor(Face::Rear,0) == Color::Blue);
-  assert(cube.getColor(Face::Right,0) == Color::Red);
-  assert(cube.getColor(Face::Left,0) == Color::Orange);
+  assert(cube.getStickerColor(0, 1, 0, 'Y') == Color::White);
+  assert(cube.getStickerColor(0, 0, 0, 'Y') == Color::Yellow);
+  assert(cube.getStickerColor(0, 0, 1, 'Z') == Color::Green);
+  assert(cube.getStickerColor(0, 0, 0, 'Z') == Color::Blue);
+  assert(cube.getStickerColor(1, 0, 0, 'X') == Color::Red);
+  assert(cube.getStickerColor(0, 0, 0, 'X') == Color::Orange);
   
   std::cout << "Cube initialized correctly\n";
 

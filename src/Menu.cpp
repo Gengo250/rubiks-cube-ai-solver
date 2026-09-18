@@ -40,62 +40,31 @@ void Menu::inicializated_Menu(int index) {
       CubeRenderer::render(cube);
       break;
     case 4:
-      cube.moveLeftClockwise();
-      std::cout << "Left face moved clockwise." << '\n';
-      CubeRenderer::render(cube);
-      break;
-    case 5:
       cube.moveFrontCounterclockwise();
       std::cout << "Front face moved Counterclockwise" << '\n';
       CubeRenderer::render(cube);
       break;
-    case 6:
+    case 5:
       cube.moveRightClockwise();
       std::cout << "Right face moved clockwise"  << '\n';
       CubeRenderer::render(cube);
       break;
-    case 7:
+    case 6:
       cube.moveRightCounterclockwise();
       std::cout << "Right face moved Counterclockwise" << '\n';
       CubeRenderer::render(cube);
       break;
-    case 8:
-      cube.moveLeftCounterclockwise();
-      std::cout << "Left face moved Counterclockwise"  << '\n';
-      CubeRenderer::render(cube);
-      break;
-    case 9:
-      cube.moveTopClockwise();
+    case 7:
+      cube.moveUpperClockwise();
       std::cout << "Top face moved clockwise." << '\n';
       CubeRenderer::render(cube);
       break;
-    case 10:
-      cube.moveTopCounterclockwise();
+    case 8:
+      cube.moveUpperCounterclockwise();
       std::cout << "Top face moved couterclockwise." << '\n';
       CubeRenderer::render(cube);
       break;
-    case 11:
-      cube.moveLowerClockwise();
-      std::cout << "Lower face moved clockwise." << '\n';
-      CubeRenderer::render(cube);
-      break;
-    case 12:
-      cube.moveLowerCounterclockwise();
-      std::cout << "Lower face moved counterclockwise." << '\n';
-      CubeRenderer::render(cube);
-      break;
-    case 13:
-      cube.MoveRearClockwise();
-      std::cout << "Rear face moved clockwise." << '\n';
-      CubeRenderer::render(cube);
-      break;
-    case 14:
-      cube.MoveRearCounterClockwise();
-      std::cout << "Rear face moved counterclockwise." << '\n';
-      CubeRenderer::render(cube);
-      break;
 
-      
     default:
       std::cout << "Invalid option!" << '\n';
       break;

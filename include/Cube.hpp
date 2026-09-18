@@ -1,48 +1,43 @@
 #pragma once
 
 #include <array>
-#include <cstddef>
+#include <string>
+#include <vector>
 
-enum class Color { 
-  White, 
-  Yellow, 
-  Green, 
-  Blue, 
-  Red, 
-  Orange 
+enum class Color {
+    White,
+    Yellow,
+    Green,
+    Blue,
+    Red,
+    Orange
 };
-enum class Face{
-  Upper,
-  Lower,
-  Front,
-  Rear, 
-  Right,
-  Left,
+
+struct Cubie {
+    int x, y, z;
+
+    Color colorX;
+    Color colorY;
+    Color colorZ;
 };
+
 class Cube {
- public:
+public:
+    std::array<Cubie, 8> pieces;
 
-  Cube();
+    Cube();
 
-  Color getColor(Face face, std::size_t position) const;
+    // Movements
+    void moveRightClockwise();
+    void moveRightCounterclockwise();
+    void moveUpperClockwise();
+    void moveUpperCounterclockwise();
+    void moveFrontClockwise();
+    void moveFrontCounterclockwise();
 
-  void moveFrontClockwise();
-  void moveLeftClockwise();
-  void moveFrontCounterclockwise();
-  void moveRightClockwise();
-  void moveRightCounterclockwise();
-  void moveTopClockwise();
-  void moveLeftCounterclockwise();
-  void  moveTopCounterclockwise();
-  void  moveLowerClockwise();
-  void moveLowerCounterclockwise();
-  void MoveRearClockwise();
-  void MoveRearCounterClockwise();
-
- private:
-  static constexpr int FACE_SIZE = 2;
-  static constexpr int FACE_COUNT = 6;
-  static constexpr int STICKERS_PER_FACE = FACE_SIZE * FACE_SIZE;
-
-  std::array<std::array<Color, STICKERS_PER_FACE>, FACE_COUNT> faces;
+    // Utility
+    bool isSolved() const;
+    Color getStickerColor(int x, int y, int z, char axis) const;
+    std::string getStateString() const;
+    static char colorToChar(Color c);
 };
