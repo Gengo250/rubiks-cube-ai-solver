@@ -1,34 +1,6 @@
-#include "CubeSnapshot.hpp"
 #include "Menu.hpp"
-#include "MenuRenderer.hpp"
 
-int main (int argc, char *argv[]) {
+int main() {
   Menu menu;
-  MenuRenderer renderer;
-
-  // Copia do estado do cubo desenhada no painel direito.
-  // So precisa ser refeita depois de um movimento.
-  CubeSnapshot snapshot = makeCubeSnapshot(menu.getCube());
-
-  while (!renderer.shouldClose()) {
-    const int index = renderer.drawFrame(snapshot);
-
-    if (index == MenuRenderer::NO_CHOICE) {
-      continue;
-    }
-
-    menu.inicializated_Menu(index);
-    snapshot = makeCubeSnapshot(menu.getCube());
-
-    // "Render Cube": passa a desenhar o cubo no painel direito da janela.
-    if (index == 1) {
-      renderer.showCube();
-    }
-
-    if (index == 0) {
-      break;
-    }
-  }
-
-  return 0;
+  menu.run();
 }

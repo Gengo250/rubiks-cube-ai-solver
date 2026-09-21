@@ -1,50 +1,25 @@
 #pragma once
 
 #include <array>
-#include <cstddef>
+#include <raylib.h>
 
-enum class Color { 
-  White, 
-  Yellow, 
-  Green, 
-  Blue, 
-  Red, 
-  Orange 
+struct Cubie {
+  // Eixos X, Y, Z: cada coordenada vale 0 ou 1.
+  std::array<int, 3> position;
+  // Adesivo voltado para fora em cada eixo; o lado vem da posicao.
+  std::array<Color, 3> colors;
 };
-enum class Face{
-  Upper,
-  Lower,
-  Front,
-  Rear, 
-  Right,
-  Left,
-};
+
 class Cube {
- public:
-
+public:
   Cube();
 
-  Color getColor(Face face, std::size_t position) const;
-
+  const std::array<Cubie, 8> &getCubies() const { return cubies; }
+  // axis: 0=X, 1=Y, 2=Z; layer: 0 ou 1.
+  // Horario olhando a camada de fora do cubo.
+  void rotate(int axis, int layer, bool clockwise);
   void shuffle();
 
-  void moveFrontClockwise();
-  void moveLeftClockwise();
-  void moveFrontCounterclockwise();
-  void moveRightClockwise();
-  void moveRightCounterclockwise();
-  void moveTopClockwise();
-  void moveLeftCounterclockwise();
-  void  moveTopCounterclockwise();
-  void  moveLowerClockwise();
-  void moveLowerCounterclockwise();
-  void MoveRearClockwise();
-  void MoveRearCounterClockwise();
-
- private:
-  static constexpr int FACE_SIZE = 2;
-  static constexpr int FACE_COUNT = 6;
-  static constexpr int STICKERS_PER_FACE = FACE_SIZE * FACE_SIZE;
-
-  std::array<std::array<Color, STICKERS_PER_FACE>, FACE_COUNT> faces;
+private:
+  std::array<Cubie, 8> cubies;
 };

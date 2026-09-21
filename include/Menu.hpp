@@ -3,15 +3,22 @@
 #include "Cube.hpp"
 
 class Menu {
- public:
+public:
   Menu();
+  ~Menu();
 
-  void menu_text();
-  void inicializated_Menu(int index);
+  Menu(const Menu &) = delete;
+  Menu &operator=(const Menu &) = delete;
+  void run();
 
-  // Estado atual do cubo, para quem so precisa ler (ex.: o painel grafico).
-  const Cube& getCube() const { return cube; }
+private:
+  int readChoice();
+  void draw() const;
+  void drawCube() const;
+  void drawText(const char *text, int x, int y, int size, Color color) const;
 
- private:
   Cube cube;
+  Font font{};
+  int selected = 0;
+  bool cubeVisible = false;
 };

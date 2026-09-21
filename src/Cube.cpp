@@ -1,430 +1,54 @@
 #include "Cube.hpp"
-#include <array>
-#include <cstddef>
+
 #include <random>
+#include <stdexcept>
+#include <utility>
 
 Cube::Cube() {
-  auto upper = static_cast<std::size_t>(Face::Upper);
-  faces[upper].fill(Color::White);
-
-  auto lower = static_cast<std::size_t>(Face::Lower);
-  faces[lower].fill(Color::Yellow);
-
-  auto front = static_cast<std::size_t>(Face::Front);
-  faces[front].fill(Color::Green);
-
-  auto rear = static_cast<std::size_t>(Face::Rear);
-  faces[rear].fill(Color::Blue);
-
-  auto right = static_cast<std::size_t>(Face::Right);
-  faces[right].fill(Color::Red);
-
-  auto left = static_cast<std::size_t>(Face::Left);
-  faces[left].fill(Color::Orange);
-}
-
-Color Cube::getColor(Face face, std::size_t position) const {
-  std::size_t faceIndex = static_cast<std::size_t>(face);
-
-  return faces[faceIndex][position];
-}
-
-void Cube::shuffle() {
-  // Aplica uma sequencia de giros sorteados entre os 12 movimentos do cubo.
-  using Move = void (Cube::*)();
-  static constexpr std::array<Move, 12> MOVES = {
-      &Cube::moveFrontClockwise, &Cube::moveFrontCounterclockwise,
-      &Cube::MoveRearClockwise,  &Cube::MoveRearCounterClockwise,
-      &Cube::moveRightClockwise, &Cube::moveRightCounterclockwise,
-      &Cube::moveLeftClockwise,  &Cube::moveLeftCounterclockwise,
-      &Cube::moveTopClockwise,   &Cube::moveTopCounterclockwise,
-      &Cube::moveLowerClockwise, &Cube::moveLowerCounterclockwise,
+  // Pares de cores nos lados 0 e 1 dos eixos X, Y e Z.
+  constexpr Color colors[3][2] = {
+      {{230, 130, 40, 255}, {200, 55, 55, 255}},   // Laranja, vermelho
+      {{235, 200, 40, 255}, {240, 240, 240, 255}}, // Amarelo, branco
+      {{45, 105, 200, 255}, {40, 170, 90, 255}},   // Azul, verde
   };
 
-  static std::mt19937 engine{std::random_device{}()};
-  std::uniform_int_distribution<std::size_t> pick(0, MOVES.size() - 1);
-
-  for (int i = 0; i < 20; ++i) {
-    (this->*MOVES[pick(engine)])();
+  int i = 0;
+  for (int x = 0; x < 2; ++x) {
+    for (int y = 0; y < 2; ++y) {
+      for (int z = 0; z < 2; ++z) {
+        cubies[i++] = {{x, y, z}, {colors[0][x], colors[1][y], colors[2][z]}};
+      }
+    }
   }
 }
 
-void Cube::moveFrontClockwise() {
-  std::size_t front = static_cast<std::size_t>(Face::Front);
-  std::size_t upper = static_cast<std::size_t>(Face::Upper);
-  std::size_t lower = static_cast<std::size_t>(Face::Lower);
-  std::size_t right = static_cast<std::size_t>(Face::Right);
-  std::size_t left = static_cast<std::size_t>(Face::Left);
+void Cube::rotate(int axis, int layer, bool clockwise) {
+  if (axis < 0 || axis > 2 || layer < 0 || layer > 1) {
+    throw std::invalid_argument("Eixo deve ser 0..2 e camada deve ser 0..1");
+  }
 
-  auto oldFront = faces[front];
+  const int a = (axis + 1) % 3;
+  const int b = (axis + 2) % 3;
+  const bool forward = clockwise == (layer == 1);
 
-  faces[front][0] = oldFront[2];
-  faces[front][1] = oldFront[0];
-  faces[front][2] = oldFront[3];
-  faces[front][3] = oldFront[1];
+  for (Cubie &cubie : cubies) {
+    if (cubie.position[axis] != layer) {
+      continue;
+    }
 
-  Color upperBottomLeft = faces[upper][2];
-  Color upperBottomRight = faces[upper][3];
-
-  faces[upper][2] = faces[left][3];
-  faces[upper][3] = faces[left][1];
-
-  faces[left][1] = faces[lower][0];
-  faces[left][3] = faces[lower][1];
-
-  faces[lower][0] = faces[right][2];
-  faces[lower][1] = faces[right][0];
-
-  faces[right][0] = upperBottomLeft;
-  faces[right][2] = upperBottomRight;
+    const int oldA = cubie.position[a];
+    cubie.position[a] = forward ? cubie.position[b] : 1 - cubie.position[b];
+    cubie.position[b] = forward ? 1 - oldA : oldA;
+    std::swap(cubie.colors[a], cubie.colors[b]);
+  }
 }
 
-void Cube::moveLeftClockwise() {
-  std::size_t left  = static_cast<std::size_t>(Face::Left);
-  std::size_t upper = static_cast<std::size_t>(Face::Upper);
-  std::size_t lower = static_cast<std::size_t>(Face::Lower);
-  std::size_t front = static_cast<std::size_t>(Face::Front);
-  std::size_t rear  = static_cast<std::size_t>(Face::Rear);
-
-
-  Color tempL = faces[left][0];
-  faces[left][0] = faces[left][2];
-  faces[left][2] = faces[left][3];
-  faces[left][3] = faces[left][1];
-  faces[left][1] = tempL;
-
-  
-  Color tempUpper0 = faces[upper][0];
-  Color tempUpper2 = faces[upper][2];
-
-  faces[upper][0] = faces[rear][3];
-  faces[upper][2] = faces[rear][1];
-
-
-  faces[rear][3] = faces[lower][0];
-  faces[rear][1] = faces[lower][2];
-
-  faces[lower][0] = faces[front][0];
-  faces[lower][2] = faces[front][2];
-
-  faces[front][0] = tempUpper0;
-  faces[front][2] = tempUpper2;
-}
-
-
-void Cube::moveFrontCounterclockwise() {
-  std::size_t front = static_cast<std::size_t>(Face::Front);
-  std::size_t upper = static_cast<std::size_t>(Face::Upper);
-  std::size_t lower = static_cast<std::size_t>(Face::Lower);
-  std::size_t right = static_cast<std::size_t>(Face::Right);
-  std::size_t left = static_cast<std::size_t>(Face::Left);
-
-
-  auto oldFront = faces[front];
-  auto oldUpper = faces[upper];
-  auto oldLower = faces[lower];
-  auto oldRight = faces[right];
-  auto oldLeft  = faces[left];
-
-  faces[front][0] = oldFront[1];
-  faces[front][1] = oldFront[3];
-  faces[front][3] = oldFront[2];
-  faces[front][2] = oldFront[0];
-  
-
-  faces[upper][2] = oldRight[0];
-  faces[upper][3] = oldRight[2];
-
-  faces[left][1] = oldUpper[3];
-  faces[left][3] = oldUpper[2];
-
-  faces[lower][0] = oldLeft[1];
-  faces[lower][1] = oldLeft[3];
-
-  faces[right][0] = oldLower[1];
-  faces[right][2] = oldLower[0];
-}
-
-void Cube::moveRightClockwise(){
-  std::size_t front = static_cast<std::size_t>(Face::Front);
-  std::size_t upper = static_cast<std::size_t>(Face::Upper);
-  std::size_t lower = static_cast<std::size_t>(Face::Lower);
-  std::size_t right = static_cast<std::size_t>(Face::Right);
-  std::size_t left = static_cast<std::size_t>(Face::Left);
-  std::size_t rear = static_cast<std::size_t>(Face::Rear);
-
-  Color temp = faces[right][0];
-  faces[right][0] = faces[right][2];
-  faces[right][2] = faces[right][3];
-  faces[right][3] = faces[right][1];
-  faces[right][1] = temp;
-  
-
-  Color templowerH = faces[lower][1];
-  Color templowerL = faces[lower][3];
-
-
-  faces[lower][1] = faces[rear][2];
-  faces[lower][3] = faces[rear][0];
-
-  faces[rear][2] = faces[upper][1];
-  faces[rear][0] = faces[upper][3];
-
-  faces[upper][1] = faces[front][1];
-  faces[upper][3] = faces[front][3];
-  
-  faces[front][1] = templowerH;
-  faces[front][3] = templowerL;
-
-}
-
-void Cube::moveRightCounterclockwise(){
-
-  std::size_t front = static_cast<std::size_t>(Face::Front);
-  std::size_t upper = static_cast<std::size_t>(Face::Upper);
-  std::size_t lower = static_cast<std::size_t>(Face::Lower);
-  std::size_t right = static_cast<std::size_t>(Face::Right);
-  std::size_t left = static_cast<std::size_t>(Face::Left);
-  std::size_t rear = static_cast<std::size_t>(Face::Rear);
-
-
-  Color temp = faces[right][0];
-  faces[right][0] = faces[right][1];
-  faces[right][1] = faces[right][3];
-  faces[right][3] = faces[right][2];
-  faces[right][2] = temp;
-
-  Color tempupperH = faces[upper][1];
-  Color tempupperL = faces[upper][3];
-
-  faces[upper][1] = faces[rear][2];
-  faces[upper][3] = faces[rear][0];
-
-  faces[rear][2] = faces[lower][1];
-  faces[rear][0] = faces[lower][3];
-
-  faces[lower][1] = faces[front][1];
-  faces[lower][3] = faces[front][3];
-
-  faces[front][1] = tempupperH;
-  faces[front][3] = tempupperL;
-
-}
-
-void Cube::moveLeftCounterclockwise() {
-  std::size_t left  = static_cast<std::size_t>(Face::Left);
-  std::size_t upper = static_cast<std::size_t>(Face::Upper);
-  std::size_t lower = static_cast<std::size_t>(Face::Lower);
-  std::size_t front = static_cast<std::size_t>(Face::Front);
-  std::size_t rear  = static_cast<std::size_t>(Face::Rear);
-
-
-  Color tempL = faces[left][0];
-  faces[left][0] = faces[left][1];
-  faces[left][1] = faces[left][3];
-  faces[left][3] = faces[left][2];
-  faces[left][2] = tempL;
-
-
-  Color tempUpper0 = faces[upper][0];
-  Color tempUpper2 = faces[upper][2];
-
-
-  faces[upper][0] = faces[front][0];
-  faces[upper][2] = faces[front][2];
-
-  faces[front][0] = faces[lower][0];
-  faces[front][2] = faces[lower][2];
-
-  faces[lower][0] = faces[rear][3];
-  faces[lower][2] = faces[rear][1];
-
-  faces[rear][3] = tempUpper0;
-  faces[rear][1] = tempUpper2;
-}
-
-void Cube::moveTopClockwise(){
-  std::size_t front = static_cast<std::size_t>(Face::Front);
-  std::size_t upper = static_cast<std::size_t>(Face::Upper);
-  std::size_t lower = static_cast<std::size_t>(Face::Lower);
-  std::size_t right = static_cast<std::size_t>(Face::Right);
-  std::size_t left = static_cast<std::size_t>(Face::Left);
-  std::size_t rear = static_cast<std::size_t>(Face::Rear);
-
-  Color temp = faces[upper][0];
-  faces[upper][0] = faces[upper][2];
-  faces[upper][2] = faces[upper][3];
-  faces[upper][3] = faces[upper][1];
-  faces[upper][1] = temp;
-
-
-  Color RightFront0 = faces[right][0];
-  Color RightFront1 = faces[right][1];
-
-  faces[right][0] = faces[rear][0];
-  faces[right][1] = faces[rear][1];
-
-  faces[rear][0] =  faces[left][0];
-  faces[rear][1] =  faces[left][1];
-
-  faces[left][0] = faces[front][0];
-  faces[left][1] = faces[front][1];
-
-  faces[front][0] = RightFront0;
-  faces[front][1] = RightFront1;
-
-}
-
-void Cube::moveTopCounterclockwise(){
-  std::size_t front = static_cast<std::size_t>(Face::Front);
-  std::size_t upper = static_cast<std::size_t>(Face::Upper);
-  std::size_t right = static_cast<std::size_t>(Face::Right);
-  std::size_t left = static_cast<std::size_t>(Face::Left);
-  std::size_t rear = static_cast<std::size_t>(Face::Rear);
-
-  Color temp = faces[upper][0];
-  faces[upper][0] = faces[upper][1];
-  faces[upper][1] = faces[upper][3];
-  faces[upper][3] = faces[upper][2];
-  faces[upper][2] = temp;
-
-  Color tempRear0 = faces[rear][0];
-  Color tempRear1 = faces[rear][1];
-
-  faces[rear][0] = faces[right][0];
-  faces[rear][1] = faces[right][1];
-
-  faces[right][0] = faces[front][0];
-  faces[right][1] = faces[front][1];
-
-  faces[front][0] = faces[left][0];
-  faces[front][1] = faces[left][1];
-
-  faces[left][0] = tempRear0;
-  faces[left][1] = tempRear1;
-}
-
-void Cube::moveLowerClockwise(){
-  std::size_t front = static_cast<std::size_t>(Face::Front);
-  std::size_t lower = static_cast<std::size_t>(Face::Lower);
-  std::size_t right = static_cast<std::size_t>(Face::Right);
-  std::size_t left = static_cast<std::size_t>(Face::Left);
-  std::size_t rear = static_cast<std::size_t>(Face::Rear);
-
-  Color temp = faces[lower][0];
-
-  faces[lower][0] = faces[lower][2];
-  faces[lower][2] = faces[lower][3];
-  faces[lower][3] = faces[lower][1];
-  faces[lower][1] = temp;
-
-  Color tempFront2 = faces[front][2];
-  Color tempFront3 = faces[front][3];
-
-  faces[front][2] = faces[left][2];
-  faces[front][3] = faces[left][3];
-
-  faces[left][2] = faces[rear][2];
-  faces[left][3] = faces[rear][3];
-
-  faces[rear][2] = faces[right][2];
-  faces[rear][3] = faces[right][3];
-
-  faces[right][2] = tempFront2;
-  faces[right][3] = tempFront3;
-}
-
-void Cube::moveLowerCounterclockwise(){
-  std::size_t front = static_cast<std::size_t>(Face::Front);
-  std::size_t lower = static_cast<std::size_t>(Face::Lower);
-  std::size_t right = static_cast<std::size_t>(Face::Right);
-  std::size_t left = static_cast<std::size_t>(Face::Left);
-  std::size_t rear = static_cast<std::size_t>(Face::Rear);
-
-  Color temp = faces[lower][0];
-
-  faces[lower][0] = faces[lower][1];
-  faces[lower][1] = faces[lower][3];
-  faces[lower][3] = faces[lower][2];
-  faces[lower][2] = temp;
-
-  Color tempFront2 = faces[front][2];
-  Color tempFront3 = faces[front][3];
-
-  faces[front][2] = faces[right][2];
-  faces[front][3] = faces[right][3];
-
-  faces[right][2] = faces[rear][2];
-  faces[right][3] = faces[rear][3];
-
-  faces[rear][2] = faces[left][2];
-  faces[rear][3] = faces[left][3];
-
-  faces[left][2] = tempFront2;
-  faces[left][3] = tempFront3;
-
-}
-
-void Cube::MoveRearClockwise() {
-  std::size_t upper = static_cast<std::size_t>(Face::Upper);
-  std::size_t lower = static_cast<std::size_t>(Face::Lower);
-  std::size_t right = static_cast<std::size_t>(Face::Right);
-  std::size_t left = static_cast<std::size_t>(Face::Left);
-  std::size_t rear = static_cast<std::size_t>(Face::Rear);
-
-
-  Color temp = faces[rear][0];
-  faces[rear][0] = faces[rear][2];
-  faces[rear][2] = faces[rear][3];
-  faces[rear][3] = faces[rear][1];
-  faces[rear][1] = temp;
-
-
-  Color TopLeft = faces[upper][0];
-  Color TopRight = faces[upper][1];
-
-  faces[upper][0] = faces[right][1];
-  faces[upper][1] = faces[right][3];
-
-  faces[right][1] = faces[lower][3];
-  faces[right][3] = faces[lower][2];
-
-  faces[lower][2] = faces[left][0];
-  faces[lower][3] = faces[left][2];
-
-  faces[left][0] = TopRight;
-  faces[left][2] = TopLeft;
-
-
-}
-
-void Cube::MoveRearCounterClockwise(){
-  std::size_t upper = static_cast<std::size_t>(Face::Upper);
-  std::size_t lower = static_cast<std::size_t>(Face::Lower);
-  std::size_t right = static_cast<std::size_t>(Face::Right);
-  std::size_t left = static_cast<std::size_t>(Face::Left);
-  std::size_t rear = static_cast<std::size_t>(Face::Rear);
-
-  Color temp = faces[rear][0];
-  faces[rear][0] = faces[rear][1];
-  faces[rear][1] = faces[rear][3];
-  faces[rear][3] = faces[rear][2];
-  faces[rear][2] = temp;
-
-
-  Color RightUp = faces[right][1];
-  Color RightDown = faces[right][3];
-
-  faces[right][1] = faces[upper][0];
-  faces[right][3] = faces[upper][1];
-
-  faces[upper][0] = faces[left][0];
-  faces[upper][1] = faces[left][2];
-
-  faces[left][0] = faces[lower][2];
-  faces[left][2] = faces[lower][3];
-
-  faces[lower][2] = RightDown ;
-  faces[lower][3] = RightUp;
-  
+void Cube::shuffle() {
+  static std::mt19937 engine{std::random_device{}()};
+  std::uniform_int_distribution<int> axis(0, 2);
+  std::uniform_int_distribution<int> bit(0, 1);
+
+  for (int i = 0; i < 20; ++i) {
+    rotate(axis(engine), bit(engine), bit(engine) == 1);
+  }
 }
