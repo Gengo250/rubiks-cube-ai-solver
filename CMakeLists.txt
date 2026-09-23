@@ -18,6 +18,7 @@ find_package(raylib 6.0 REQUIRED)
 
 add_library(rubiks_cube_core
     src/Cube.cpp
+    src/DepthFirstSearch.cpp
 )
 
 target_include_directories(rubiks_cube_core
