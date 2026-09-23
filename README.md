@@ -24,7 +24,9 @@ no sentido horário. `shuffle()` aplica vinte giros aleatórios.
 | Arquivo | Responsabilidade |
 |---|---|
 | `include/Cube.hpp`, `src/Cube.cpp` | Peças, giros e embaralhamento |
-| `include/Menu.hpp`, `src/Menu.cpp` | Janela Raylib, fonte, comandos e desenho |
+| `include/Heuristic.hpp`, `src/Heuristic.cpp` | Índice canônico do estado e a heurística admissível |
+| `include/Solver.hpp`, `src/Solver.cpp` | Busca A* usando essa heurística |
+| `include/Menu.hpp`, `src/Menu.cpp` | Janela Raylib, fonte, telas e desenho |
 | `src/main.cpp` | Inicia o menu |
 
 `include/Menu.hpp` é a interface pública do módulo de menu. Para utilizá-lo,
@@ -46,15 +48,44 @@ cmake --build build
 ```
 
 Use setas ou W/S para navegar; Enter, espaço ou clique para confirmar.
-As opções permitem exibir o cubo, embaralhar e girar as seis faces nos dois sentidos.
 Escape, fechar a janela ou `Finish` encerra o simulador.
+
+O menu tem três telas:
+
+- **inicial** — `Solve by Yourself` ou `Solve with AI`;
+- **`Solve by Yourself`** — exibir o cubo, embaralhar e girar as seis faces nos
+  dois sentidos, como antes;
+- **`Solve with AI`** — embaralhar e escolher a busca. `Depth-First Search` e
+  `Breadth-First Search` aparecem na lista mas respondem que não estão
+  implementadas; **`A* Search`** resolve de fato, e a solução é aplicada ao
+  cubo um movimento por vez, com a notação, o número de nós expandidos e o
+  tempo no painel da direita.
 
 ```sh
 ctest --test-dir build --output-on-failure
 ```
 
-Os testes não abrem janela: verificam os sentidos das seis faces, movimentos
-inversos, quatro giros, integridade das peças e uma sequência de mil movimentos.
+Os testes não abrem janela. `cube_tests` verifica os sentidos das seis faces,
+movimentos inversos, quatro giros, integridade das peças e uma sequência de mil
+movimentos. `solver_tests` verifica a consistência da heurística, a otimalidade
+do A* contra uma BFS e que aplicar a solução devolve o cubo resolvido.
+
+## Solver
+
+A busca usa o modelo descrito em [`docs/heuristica-a-estrela.md`](docs/heuristica-a-estrela.md):
+a peça em `(0,0,0)` fica parada e só as camadas `layer = 1` giram, o que dá
+nove movimentos (R, U, F nos dois sentidos e meia-volta) na métrica HTM.
+
+Como `shuffle()` move essa peça, o solver primeiro gira o **cubo inteiro** até
+ela voltar para casa. Essa reorientação não resolve nada e não conta como
+movimento da solução; ela apenas coloca o modelo em vigor, e garante que o
+cubo termine exatamente no estado inicial de `Cube()`.
+
+A heurística é o máximo de quatro pattern databases — os grupos de peças
+`{1,2,3}` e `{4,5,6,7}`, a permutação e a orientação —, 79 KiB construídos por
+BFS reversa no primeiro uso. Ela é admissível e consistente, então o A*
+devolve sempre a solução mais curta: para cubos embaralhados, 140 nós
+expandidos em média e menos de 1 ms por busca.
 
 ## Representação das faces
 

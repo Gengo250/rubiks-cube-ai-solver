@@ -18,6 +18,8 @@ find_package(raylib 6.0 REQUIRED)
 
 add_library(rubiks_cube_core
     src/Cube.cpp
+    src/Heuristic.cpp
+    src/Solver.cpp
 )
 
 target_include_directories(rubiks_cube_core
@@ -54,4 +56,8 @@ if(BUILD_TESTING)
     add_executable(cube_tests tests/CubeTests.cpp)
     target_link_libraries(cube_tests PRIVATE rubiks_cube_core)
     add_test(NAME cube_rotations COMMAND cube_tests)
+
+    add_executable(solver_tests tests/SolverTests.cpp)
+    target_link_libraries(solver_tests PRIVATE rubiks_cube_core)
+    add_test(NAME cube_solver COMMAND solver_tests)
 endif()
