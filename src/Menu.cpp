@@ -38,7 +38,7 @@ struct MenuOption {
   bool clockwise = true;
 };
 
-constexpr std::array<MenuOption, 15> OPTIONS = {{
+constexpr std::array<MenuOption, 17> OPTIONS = {{
     {"Finish"},
     {"Render Cube"},
     {"Shuffle Cube"},
@@ -54,6 +54,8 @@ constexpr std::array<MenuOption, 15> OPTIONS = {{
     {"Move Lower Counterclockwise", 1, 0, false},
     {"Move Rear Clockwise", 2, 0, true},
     {"Move Rear Counterclockwise", 2, 0, false},
+    {"Reset Cube"},
+    {"Check if Cube is Solved"},
 }};
 
 struct NetFace {
@@ -110,9 +112,18 @@ void Menu::run() {
       cubeVisible = true;
     } else if (choice == 2) {
       cube.shuffle();
-    } else if (choice >= 3) {
+      statusMessage = "";
+    } else if (choice >= 3 && choice <= 14) {
       const MenuOption &option = OPTIONS[choice];
       cube.rotate(option.axis, option.layer, option.clockwise);
+      statusMessage = "";
+    } else if (choice == 15) {
+      cube.reset();
+      cubeVisible = true;
+      statusMessage = "Cube reset successfully.";
+    } else if (choice == 16) {
+      statusMessage =
+          cube.isSolved() ? "The cube is solved!" : "The cube is not solved.";
     }
 
     BeginDrawing();
@@ -180,6 +191,11 @@ void Menu::draw() const {
 
   drawText("ESTADO DO CUBO", MENU_WIDTH + MARGIN, 22, 28, TITLE);
   drawText("Planificacao 2x2x2", MENU_WIDTH + MARGIN, 58, 14, HINT);
+
+  if (statusMessage[0] != '\0') {
+    drawText(statusMessage, MENU_WIDTH + MARGIN, 88, 18, SELECTED_TEXT);
+  }
+
   if (cubeVisible) {
     drawCube();
   } else {

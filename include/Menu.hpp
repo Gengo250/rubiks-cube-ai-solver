@@ -21,4 +21,5 @@ private:
   Font font{};
   int selected = 0;
   bool cubeVisible = false;
+  const char *statusMessage = "";
 };

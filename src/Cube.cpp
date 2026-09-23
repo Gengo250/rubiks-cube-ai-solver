@@ -4,6 +4,15 @@
 #include <stdexcept>
 #include <utility>
 
+namespace {
+
+bool sameColor(const Color &first, const Color &second) {
+  return first.r == second.r && first.g == second.g &&
+         first.b == second.b && first.a == second.a;
+}
+
+} // namespace
+
 Cube::Cube() {
   // Pares de cores nos lados 0 e 1 dos eixos X, Y e Z.
   constexpr Color colors[3][2] = {
@@ -51,4 +60,32 @@ void Cube::shuffle() {
   for (int i = 0; i < 20; ++i) {
     rotate(axis(engine), bit(engine), bit(engine) == 1);
   }
+}
+
+void Cube::reset() {
+  *this = Cube();
+}
+
+bool Cube::isSolved() const {
+  for (int axis = 0; axis < 3; ++axis) {
+    for (int layer = 0; layer < 2; ++layer) {
+      Color faceColor{};
+      bool firstCubie = true;
+
+      for (const Cubie &cubie : cubies) {
+        if (cubie.position[axis] != layer) {
+          continue;
+        }
+
+        if (firstCubie) {
+          faceColor = cubie.colors[axis];
+          firstCubie = false;
+        } else if (!sameColor(faceColor, cubie.colors[axis])) {
+          return false;
+        }
+      }
+    }
+  }
+
+  return true;
 }

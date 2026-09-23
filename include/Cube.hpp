@@ -19,6 +19,8 @@ public:
   // Horario olhando a camada de fora do cubo.
   void rotate(int axis, int layer, bool clockwise);
   void shuffle();
+  void reset();
+  bool isSolved() const;
 
 private:
   std::array<Cubie, 8> cubies;
