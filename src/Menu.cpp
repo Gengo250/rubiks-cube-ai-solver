@@ -1,7 +1,10 @@
 #include "Menu.hpp"
-
+#include "BFS_Solver.hpp"
+#include "Cube.hpp"
 #include <array>
-
+#include <vector>
+#include <string>
+#include <unordered_set>
 namespace {
 
 constexpr int WINDOW_WIDTH = 1810;
@@ -38,10 +41,11 @@ struct MenuOption {
   bool clockwise = true;
 };
 
-constexpr std::array<MenuOption, 15> OPTIONS = {{
+constexpr std::array<MenuOption, 16> OPTIONS = {{
     {"Finish"},
     {"Render Cube"},
     {"Shuffle Cube"},
+    {"Solve Cube by BFS"},
     {"Move Front Clockwise", 2, 1, true},
     {"Move Left Clockwise", 0, 0, true},
     {"Move Front Counterclockwise", 2, 1, false},
@@ -80,7 +84,7 @@ Rectangle optionRect(int index) {
           static_cast<float>(ITEM_HEIGHT)};
 }
 
-} // namespace
+} 
 
 Menu::Menu() {
   InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "MENU - CUBE 2X2X2");
@@ -103,16 +107,61 @@ Menu::~Menu() {
 void Menu::run() {
   while (!WindowShouldClose()) {
     const int choice = readChoice();
+    
+    // Tratamento das escolhas do usuário
     if (choice == 0) {
       break;
-    }
-    if (choice == 1) {
+    } else if (choice == 1) {
       cubeVisible = true;
     } else if (choice == 2) {
       cube.shuffle();
-    } else if (choice >= 3) {
+      isSolving = false; 
+    } else if (choice == 3) {
+      totalMovimentos = 0;
+      estadosExplorados = 0;
+      textoSolucao = "";
+
+      solutionPath = solveCubeBFS(cube, totalMovimentos, estadosExplorados);
+      
+      if (totalMovimentos > 0) {
+          solucaoPronta = true;
+          isSolving = true; // Liga o motor da animação
+          currentMoveIndex = 0;
+          moveTimer = 0.0f;
+          cubeVisible = true; 
+
+          for (const CubeMove& m : solutionPath) {
+          if (m.axis == 0) textoSolucao += "R";
+          else if (m.axis == 1) textoSolucao += "U";
+          else if (m.axis == 2) textoSolucao += "F";
+            
+          if (!m.clockwise) textoSolucao += "'";
+          textoSolucao += " ";
+        }
+    }
+      }
+      else if (choice >= 4) {
       const MenuOption &option = OPTIONS[choice];
       cube.rotate(option.axis, option.layer, option.clockwise);
+      isSolving = false; // Se o usuário interferir, desliga o play automático
+    }
+
+    // 2. Lógica do Cronômetro da Animação (Play Automático)
+    if (isSolving) { // Apenas verifica se a flag de animação está ligada
+        moveTimer += GetFrameTime(); 
+        
+        // A cada 0.6 segundos, executa 1 movimento
+        if (moveTimer >= 0.6f) { 
+            if (currentMoveIndex < solutionPath.size()) {
+                CubeMove m = solutionPath[currentMoveIndex];
+                cube.rotate(m.axis, m.layer, m.clockwise);
+                
+                currentMoveIndex++;
+                moveTimer = 0.0f; 
+            } else {
+                isSolving = false; // Desliga a animação quando os passos acabarem
+            }
+        }
     }
 
     BeginDrawing();
@@ -120,7 +169,6 @@ void Menu::run() {
     EndDrawing();
   }
 }
-
 int Menu::readChoice() {
   constexpr int count = static_cast<int>(OPTIONS.size());
   int choice = -1;
@@ -186,6 +234,18 @@ void Menu::draw() const {
     drawText("Escolha \"1 - Render Cube\" para desenhar o cubo aqui.",
              MENU_WIDTH + MARGIN, WINDOW_HEIGHT / 2, 18, HINT);
   }
+  if (solucaoPronta) {
+    // Posiciona os textos abaixo da área central do cubo
+    int infoY = WINDOW_HEIGHT - 180; 
+    
+    drawText(TextFormat("Solucao encontrada em: %d movimentos", totalMovimentos), MENU_WIDTH + MARGIN, infoY, 20, SELECTED_TEXT);
+    drawText(TextFormat("Estados mapeados pela IA: %d estados", estadosExplorados), MENU_WIDTH + MARGIN, infoY + 30, 20, HINT);
+    
+    drawText("Passos da Execucao:", MENU_WIDTH + MARGIN, infoY + 70, 18, TITLE);
+    
+    // Desenha a sequência legível ("R U' F...") na tela
+    drawText(textoSolucao.c_str(), MENU_WIDTH + MARGIN, infoY + 100, 20, SELECTED);
+}
 }
 
 void Menu::drawCube() const {

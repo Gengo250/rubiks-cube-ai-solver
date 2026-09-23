@@ -1,6 +1,9 @@
 #pragma once
-
 #include "Cube.hpp"
+#include "BFS_Solver.hpp"
+#include <array>
+#include <vector>
+#include <string>
 
 class Menu {
 public:
@@ -21,4 +24,14 @@ private:
   Font font{};
   int selected = 0;
   bool cubeVisible = false;
+
+  std::vector<CubeMove> solutionPath;
+
+  bool isSolving = false;
+  int currentMoveIndex = 0;
+  int totalMovimentos ;
+  int estadosExplorados;
+  std::string textoSolucao = ""; // Guardará a string legível (ex: "U R F'...")
+  bool solucaoPronta = false;
+  float moveTimer = 0.0f;
 };

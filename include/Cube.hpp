@@ -1,7 +1,8 @@
 #pragma once
-
+#include <vector>
 #include <array>
 #include <raylib.h>
+#include <string>
 
 struct Cubie {
   // Eixos X, Y, Z: cada coordenada vale 0 ou 1.
@@ -9,6 +10,7 @@ struct Cubie {
   // Adesivo voltado para fora em cada eixo; o lado vem da posicao.
   std::array<Color, 3> colors;
 };
+
 
 class Cube {
 public:
@@ -19,6 +21,7 @@ public:
   // Horario olhando a camada de fora do cubo.
   void rotate(int axis, int layer, bool clockwise);
   void shuffle();
+  bool isSolved() const;
 
 private:
   std::array<Cubie, 8> cubies;
