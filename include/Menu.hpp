@@ -1,7 +1,7 @@
 #pragma once
-
 #include "Cube.hpp"
 #include "Solver.hpp"
+#include "BFS_Solver.hpp"
 
 #include <string>
 #include <vector>
@@ -23,6 +23,7 @@ private:
   bool handle(int choice);
   void openScreen(MenuScreen next);
   void startSolve();
+  void startSolveBFS();
   bool playing() const;
   void advancePlayback();
   void draw() const;
@@ -43,4 +44,6 @@ private:
   std::size_t playbackIndex = 0;
   std::size_t setupCount = 0;
   int frames = 0;
+
+  bool pendenteBFS = false;
 };

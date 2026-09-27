@@ -43,12 +43,12 @@ void Cube::rotate(int axis, int layer, bool clockwise) {
   }
 }
 
-void Cube::shuffle() {
+void Cube::shuffle() { // Para melhorar a busca, travei a camada 2 em 1 para haver um ponto de inicio definido para aleatorizar o cubo
   static std::mt19937 engine{std::random_device{}()};
   std::uniform_int_distribution<int> axis(0, 2);
   std::uniform_int_distribution<int> bit(0, 1);
 
   for (int i = 0; i < 20; ++i) {
-    rotate(axis(engine), bit(engine), bit(engine) == 1);
+    rotate(axis(engine),1, bit(engine) == 1);
   }
 }

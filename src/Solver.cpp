@@ -8,7 +8,6 @@
 
 namespace {
 
-// O 2x2 tem numero de Deus 11 em HTM, entao nenhum f passa disso.
 constexpr int MAX_COST = 16;
 
 Turn turnOf(int move) {
@@ -25,7 +24,6 @@ Solution solveAStar(const Cube &cube) {
   Solution solution;
 
   // A heuristica so existe com a peca 0 em casa. Reorientar o cubo inteiro
-  // nao resolve nada: apenas coloca o modelo de canto fixo em vigor.
   Cube working = cube;
   for (const heuristic::Spin &spin : heuristic::homingSpins(cube)) {
     working.rotate(spin.axis, 1, spin.clockwise);

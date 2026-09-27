@@ -1,7 +1,10 @@
 #include "Menu.hpp"
-
+#include "BFS_Solver.hpp"
+#include "Cube.hpp"
 #include <array>
-
+#include <vector>
+#include <string>
+#include <unordered_set>
 namespace {
 
 constexpr int WINDOW_WIDTH = 1810;
@@ -158,7 +161,7 @@ Rectangle optionRect(int index) {
           static_cast<float>(ITEM_HEIGHT)};
 }
 
-} // namespace
+} 
 
 Menu::Menu() {
   InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "MENU - CUBE 2X2X2");
@@ -181,7 +184,7 @@ Menu::~Menu() {
 void Menu::run() {
   bool running = true;
   while (running && !WindowShouldClose()) {
-    const int choice = readChoice();
+    const int choice = pendenteBFS ? -1 : readChoice();
     if (playing()) {
       advancePlayback();
     } else if (choice >= 0) {
@@ -191,6 +194,11 @@ void Menu::run() {
     BeginDrawing();
     draw();
     EndDrawing();
+
+    if (pendenteBFS) {
+        startSolveBFS();   
+        pendenteBFS = false; 
+    }
   }
 }
 
@@ -268,7 +276,8 @@ bool Menu::handle(int choice) {
     status = "Busca em profundidade nao implementada. Use a busca A*.";
     break;
   case Action::SolveBreadth:
-    status = "Busca em largura nao implementada. Use a busca A*.";
+    status = "Busca em largura sendo feita, aguarde alguns segundos" ;
+    pendenteBFS = true;
     break;
   case Action::SolveAStar:
     startSolve();
@@ -292,6 +301,45 @@ void Menu::startSolve() {
     status = "O cubo ja esta resolvido.";
   } else {
     status = "Solucao encontrada. Aplicando os movimentos.";
+  }
+}
+
+void Menu::startSolveBFS() {
+  cubeVisible = true;
+  int totalMovimentos = 0;
+  int estadosExplorados = 0;
+
+  std::vector<CubeMove> bfsPath = solveCubeBFS(cube, totalMovimentos, estadosExplorados);
+
+  playback.clear();
+  setupCount = 0;
+  playbackIndex = 0;
+  frames = 0;
+
+  if (totalMovimentos > 0) {
+    for (const CubeMove &move : bfsPath) {
+        Turn t;
+        t.axis = move.axis;
+        t.layer = move.layer;
+        t.clockwise = move.clockwise;
+        t.half = false; 
+        
+        playback.push_back(t);
+    }
+    
+    solution.solved = true;
+    solution.turns = playback; 
+    solution.expanded = estadosExplorados; 
+    solution.milliseconds = 0.0f; 
+    
+    status = "Solucao BFS encontrada. Aplicando os movimentos.";
+    
+  } else if (cube.isSolved()) {
+    solution.solved = true;
+    status = "O cubo ja esta resolvido.";
+  } else {
+    solution.solved = false;
+    status = "A BFS nao encontrou solucao (limite atingido ou erro).";
   }
 }
 
