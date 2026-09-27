@@ -18,6 +18,9 @@ constexpr int FACE_STEP = FACE_SIZE + 34;
 constexpr int NET_X =
     MENU_WIDTH + (WINDOW_WIDTH - MENU_WIDTH - (4 * FACE_STEP - 34)) / 2;
 constexpr int NET_Y = (WINDOW_HEIGHT - (3 * FACE_STEP - 34)) / 2;
+constexpr int STATUS_Y = NET_Y + 3 * FACE_STEP - 10;
+// Um movimento a cada doze quadros: rapido de assistir, lento de perder.
+constexpr int FRAMES_PER_MOVE = 12;
 
 constexpr Color BACKGROUND = {24, 26, 32, 255};
 constexpr Color PANEL = {18, 20, 25, 255};
@@ -28,33 +31,108 @@ constexpr Color SELECTED = {58, 110, 165, 255};
 constexpr Color BORDER = {70, 76, 90, 255};
 constexpr Color TEXT = {210, 214, 222, 255};
 constexpr Color SELECTED_TEXT = {255, 255, 255, 255};
+constexpr Color RESULT = {120, 200, 140, 255};
 constexpr const char *FONT_FILE = "assets/fonts/DejaVuSans.ttf";
+
+enum class Action {
+  Quit,
+  Back,
+  OpenManual,
+  OpenAi,
+  Render,
+  Shuffle,
+  Rotate,
+  SolveDepth,
+  SolveBreadth,
+  SolveAStar,
+};
 
 // A mesma tabela fornece os rotulos e os parametros dos movimentos.
 struct MenuOption {
   const char *label;
-  int axis = -1;
+  Action action;
+  int axis = 0;
   int layer = 0;
   bool clockwise = true;
 };
 
-constexpr std::array<MenuOption, 15> OPTIONS = {{
-    {"Finish"},
-    {"Render Cube"},
-    {"Shuffle Cube"},
-    {"Move Front Clockwise", 2, 1, true},
-    {"Move Left Clockwise", 0, 0, true},
-    {"Move Front Counterclockwise", 2, 1, false},
-    {"Move Right Clockwise", 0, 1, true},
-    {"Move Right Counterclockwise", 0, 1, false},
-    {"Move Left Counterclockwise", 0, 0, false},
-    {"Move Top Clockwise", 1, 1, true},
-    {"Move Top Counterclockwise", 1, 1, false},
-    {"Move Lower Clockwise", 1, 0, true},
-    {"Move Lower Counterclockwise", 1, 0, false},
-    {"Move Rear Clockwise", 2, 0, true},
-    {"Move Rear Counterclockwise", 2, 0, false},
+constexpr std::array<MenuOption, 3> HOME_OPTIONS = {{
+    {"Finish", Action::Quit},
+    {"Solve by Yourself", Action::OpenManual},
+    {"Solve with AI", Action::OpenAi},
 }};
+
+constexpr std::array<MenuOption, 15> MANUAL_OPTIONS = {{
+    {"Back", Action::Back},
+    {"Render Cube", Action::Render},
+    {"Shuffle Cube", Action::Shuffle},
+    {"Move Front Clockwise", Action::Rotate, 2, 1, true},
+    {"Move Left Clockwise", Action::Rotate, 0, 0, true},
+    {"Move Front Counterclockwise", Action::Rotate, 2, 1, false},
+    {"Move Right Clockwise", Action::Rotate, 0, 1, true},
+    {"Move Right Counterclockwise", Action::Rotate, 0, 1, false},
+    {"Move Left Counterclockwise", Action::Rotate, 0, 0, false},
+    {"Move Top Clockwise", Action::Rotate, 1, 1, true},
+    {"Move Top Counterclockwise", Action::Rotate, 1, 1, false},
+    {"Move Lower Clockwise", Action::Rotate, 1, 0, true},
+    {"Move Lower Counterclockwise", Action::Rotate, 1, 0, false},
+    {"Move Rear Clockwise", Action::Rotate, 2, 0, true},
+    {"Move Rear Counterclockwise", Action::Rotate, 2, 0, false},
+}};
+
+constexpr std::array<MenuOption, 5> AI_OPTIONS = {{
+    {"Back", Action::Back},
+    {"Shuffle Cube", Action::Shuffle},
+    {"Depth-First Search", Action::SolveDepth},
+    {"Breadth-First Search", Action::SolveBreadth},
+    {"A* Search", Action::SolveAStar},
+}};
+
+struct OptionList {
+  const MenuOption *items;
+  int count;
+};
+
+OptionList optionsFor(MenuScreen screen) {
+  if (screen == MenuScreen::Manual) {
+    return {MANUAL_OPTIONS.data(), static_cast<int>(MANUAL_OPTIONS.size())};
+  }
+  if (screen == MenuScreen::Ai) {
+    return {AI_OPTIONS.data(), static_cast<int>(AI_OPTIONS.size())};
+  }
+  return {HOME_OPTIONS.data(), static_cast<int>(HOME_OPTIONS.size())};
+}
+
+const char *titleFor(MenuScreen screen) {
+  if (screen == MenuScreen::Manual) {
+    return "VOCE RESOLVE";
+  }
+  if (screen == MenuScreen::Ai) {
+    return "IA RESOLVE";
+  }
+  return "MENU - CUBE 2X2X2";
+}
+
+const char *hintFor(MenuScreen screen) {
+  if (screen == MenuScreen::Manual) {
+    return "Gire as faces ate resolver o cubo.";
+  }
+  if (screen == MenuScreen::Ai) {
+    return "Embaralhe e escolha a busca. So a busca A* esta implementada.";
+  }
+  return "Escolha quem resolve o cubo.";
+}
+
+// Camada 1 dos eixos X, Y e Z: as faces Right, Upper e Front.
+std::string turnName(const Turn &turn) {
+  std::string name(1, "RUF"[turn.axis]);
+  if (turn.half) {
+    name += '2';
+  } else if (!turn.clockwise) {
+    name += '\'';
+  }
+  return name;
+}
 
 struct NetFace {
   int axis;
@@ -101,18 +179,13 @@ Menu::~Menu() {
 }
 
 void Menu::run() {
-  while (!WindowShouldClose()) {
+  bool running = true;
+  while (running && !WindowShouldClose()) {
     const int choice = readChoice();
-    if (choice == 0) {
-      break;
-    }
-    if (choice == 1) {
-      cubeVisible = true;
-    } else if (choice == 2) {
-      cube.shuffle();
-    } else if (choice >= 3) {
-      const MenuOption &option = OPTIONS[choice];
-      cube.rotate(option.axis, option.layer, option.clockwise);
+    if (playing()) {
+      advancePlayback();
+    } else if (choice >= 0) {
+      running = handle(choice);
     }
 
     BeginDrawing();
@@ -122,7 +195,7 @@ void Menu::run() {
 }
 
 int Menu::readChoice() {
-  constexpr int count = static_cast<int>(OPTIONS.size());
+  const int count = optionsFor(screen).count;
   int choice = -1;
 
   if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S)) {
@@ -153,6 +226,95 @@ int Menu::readChoice() {
   return choice;
 }
 
+void Menu::openScreen(MenuScreen next) {
+  screen = next;
+  selected = 0;
+  status.clear();
+  solution = Solution{};
+  playback.clear();
+  playbackIndex = 0;
+  setupCount = 0;
+  if (next == MenuScreen::Ai) {
+    cubeVisible = true;
+  }
+}
+
+bool Menu::handle(int choice) {
+  const MenuOption &option = optionsFor(screen).items[choice];
+  switch (option.action) {
+  case Action::Quit:
+    return false;
+  case Action::Back:
+    openScreen(MenuScreen::Home);
+    break;
+  case Action::OpenManual:
+    openScreen(MenuScreen::Manual);
+    break;
+  case Action::OpenAi:
+    openScreen(MenuScreen::Ai);
+    break;
+  case Action::Render:
+    cubeVisible = true;
+    break;
+  case Action::Shuffle:
+    cube.shuffle();
+    solution = Solution{};
+    status = "Cubo embaralhado.";
+    break;
+  case Action::Rotate:
+    cube.rotate(option.axis, option.layer, option.clockwise);
+    break;
+  case Action::SolveDepth:
+    status = "Busca em profundidade nao implementada. Use a busca A*.";
+    break;
+  case Action::SolveBreadth:
+    status = "Busca em largura nao implementada. Use a busca A*.";
+    break;
+  case Action::SolveAStar:
+    startSolve();
+    break;
+  }
+  return true;
+}
+
+void Menu::startSolve() {
+  cubeVisible = true;
+  solution = solveAStar(cube);
+  playback = solution.setup;
+  playback.insert(playback.end(), solution.turns.begin(), solution.turns.end());
+  setupCount = solution.setup.size();
+  playbackIndex = 0;
+  frames = 0;
+
+  if (!solution.solved) {
+    status = "A busca nao encontrou solucao.";
+  } else if (solution.turns.empty()) {
+    status = "O cubo ja esta resolvido.";
+  } else {
+    status = "Solucao encontrada. Aplicando os movimentos.";
+  }
+}
+
+bool Menu::playing() const { return playbackIndex < playback.size(); }
+
+void Menu::advancePlayback() {
+  if (++frames < FRAMES_PER_MOVE) {
+    return;
+  }
+  frames = 0;
+
+  const Turn &turn = playback[playbackIndex];
+  cube.rotate(turn.axis, turn.layer, turn.clockwise);
+  if (turn.half) {
+    cube.rotate(turn.axis, turn.layer, turn.clockwise);
+  }
+  ++playbackIndex;
+
+  if (!playing() && solution.solved) {
+    status = "Cubo resolvido pela busca A*.";
+  }
+}
+
 void Menu::drawText(const char *text, int x, int y, int size,
                     Color color) const {
   DrawTextEx(font, text, {static_cast<float>(x), static_cast<float>(y)},
@@ -164,16 +326,16 @@ void Menu::draw() const {
   DrawRectangle(MENU_WIDTH, 0, WINDOW_WIDTH - MENU_WIDTH, WINDOW_HEIGHT, PANEL);
   DrawLine(MENU_WIDTH, 0, MENU_WIDTH, WINDOW_HEIGHT, BORDER);
 
-  drawText("MENU - CUBE 2X2X2", MARGIN, 22, 28, TITLE);
-  drawText("Setas/mouse para navegar, ENTER ou clique para confirmar.", MARGIN,
-           58, 14, HINT);
+  drawText(titleFor(screen), MARGIN, 22, 28, TITLE);
+  drawText(hintFor(screen), MARGIN, 58, 14, HINT);
 
-  for (int i = 0; i < static_cast<int>(OPTIONS.size()); ++i) {
+  const OptionList options = optionsFor(screen);
+  for (int i = 0; i < options.count; ++i) {
     const Rectangle rect = optionRect(i);
     const bool active = i == selected;
     DrawRectangleRec(rect, active ? SELECTED : ITEM);
     DrawRectangleLinesEx(rect, 1.0f, BORDER);
-    drawText(TextFormat("%d - %s", i, OPTIONS[i].label),
+    drawText(TextFormat("%d - %s", i, options.items[i].label),
              static_cast<int>(rect.x) + 14, static_cast<int>(rect.y) + 8, 18,
              active ? SELECTED_TEXT : TEXT);
   }
@@ -185,6 +347,45 @@ void Menu::draw() const {
   } else {
     drawText("Escolha \"1 - Render Cube\" para desenhar o cubo aqui.",
              MENU_WIDTH + MARGIN, WINDOW_HEIGHT / 2, 18, HINT);
+  }
+  drawStatus();
+}
+
+void Menu::drawStatus() const {
+  int y = STATUS_Y;
+  if (!status.empty()) {
+    drawText(status.c_str(), MENU_WIDTH + MARGIN, y, 18,
+             playing() ? TEXT : RESULT);
+    y += 26;
+  }
+
+  if (!solution.solved) {
+    return;
+  }
+
+  drawText(TextFormat("%d movimentos HTM   %lld nos expandidos   %.1f ms",
+                      static_cast<int>(solution.turns.size()),
+                      solution.expanded, solution.milliseconds),
+           MENU_WIDTH + MARGIN, y, 16, HINT);
+  y += 24;
+
+  if (!solution.notation.empty()) {
+    drawText(solution.notation.c_str(), MENU_WIDTH + MARGIN, y, 20, TEXT);
+    y += 26;
+  }
+
+  if (playing()) {
+    if (playbackIndex < setupCount) {
+      drawText("Reorientando o cubo inteiro: a peca fixa volta para casa.",
+               MENU_WIDTH + MARGIN, y, 16, HINT);
+    } else {
+      const std::size_t step = playbackIndex - setupCount;
+      drawText(TextFormat("Movimento %d de %d: %s",
+                          static_cast<int>(step + 1),
+                          static_cast<int>(solution.turns.size()),
+                          turnName(playback[playbackIndex]).c_str()),
+               MENU_WIDTH + MARGIN, y, 16, HINT);
+    }
   }
 }
 
