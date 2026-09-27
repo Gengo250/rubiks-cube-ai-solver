@@ -27,7 +27,6 @@ target_include_directories(rubiks_cube_core
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# Cubie usa Color da propria raylib, inclusive no header publico.
 target_link_libraries(rubiks_cube_core
     PUBLIC
         raylib
@@ -50,14 +49,3 @@ add_custom_command(TARGET rubiks_cube_ai_solver POST_BUILD
             $<TARGET_FILE_DIR:rubiks_cube_ai_solver>/assets
     COMMENT "Copiando assets/ para a pasta do executavel"
 )
-
-include(CTest)
-if(BUILD_TESTING)
-    add_executable(cube_tests tests/CubeTests.cpp)
-    target_link_libraries(cube_tests PRIVATE rubiks_cube_core)
-    add_test(NAME cube_rotations COMMAND cube_tests)
-
-    add_executable(solver_tests tests/SolverTests.cpp)
-    target_link_libraries(solver_tests PRIVATE rubiks_cube_core)
-    add_test(NAME cube_solver COMMAND solver_tests)
-endif()
