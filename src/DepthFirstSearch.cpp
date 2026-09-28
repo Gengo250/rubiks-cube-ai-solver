@@ -1,4 +1,7 @@
 #include "DepthFirstSearch.hpp"
+#include "SearchLoop.hpp"
+
+#include <algorithm>
 #include <stdexcept>
 #include <unordered_map>
 #include <utility>
@@ -26,32 +29,125 @@ struct SearchNode {
   int depth;
 };
 
-void appendColor(std::string &key, const Color &color) {
+void appendColor(std::string &key,
+                 const Color &color) {
   key.push_back(static_cast<char>(color.r));
   key.push_back(static_cast<char>(color.g));
   key.push_back(static_cast<char>(color.b));
   key.push_back(static_cast<char>(color.a));
 }
 
-bool areInverseMoves(const DepthMove &first, const DepthMove &second) {
-  return first.axis == second.axis && first.layer == second.layer &&
+bool areInverseMoves(const DepthMove &first,
+                     const DepthMove &second) {
+  return first.axis == second.axis &&
+         first.layer == second.layer &&
          first.clockwise != second.clockwise;
+}
+
+// O IDDFS utiliza uma pilha limitada.
+class DepthStructure {
+public:
+  using NodeType = SearchNode;
+
+  explicit DepthStructure(int depthLimit)
+      : depthLimit(depthLimit) {
+  }
+
+  void add(SearchNode node) {
+    if (node.depth > depthLimit) {
+      return;
+    }
+
+    const int remainingDepth =
+        depthLimit - node.depth;
+
+    const std::string key =
+        DepthFirstSearch::createStateKey(node.state);
+
+    const auto found =
+        bestRemainingDepth.find(key);
+
+    if (found != bestRemainingDepth.end() &&
+        found->second >= remainingDepth) {
+      return;
+    }
+
+    bestRemainingDepth[key] = remainingDepth;
+    states.push_back(std::move(node));
+  }
+
+  SearchNode removeNext() {
+    SearchNode node = std::move(states.back());
+    states.pop_back();
+    return node;
+  }
+
+  bool empty() const {
+    return states.empty();
+  }
+
+private:
+  int depthLimit;
+  std::vector<SearchNode> states;
+  std::unordered_map<std::string, int>
+      bestRemainingDepth;
+};
+
+std::vector<SearchNode>
+generateDepthSuccessors(const SearchNode &current) {
+  std::vector<SearchNode> successors;
+
+  for (const DepthSuccessor &successor :
+       DepthFirstSearch::generateSuccessors(
+           current.state)) {
+    if (!current.path.empty() &&
+        areInverseMoves(
+            current.path.back(),
+            successor.move)) {
+      continue;
+    }
+
+    std::vector<DepthMove> nextPath =
+        current.path;
+
+    nextPath.push_back(successor.move);
+
+    successors.push_back({
+        successor.state,
+        std::move(nextPath),
+        current.depth + 1,
+    });
+  }
+
+  // Como a estrutura é uma pilha, a inversão preserva
+  // a ordem original dos movimentos.
+  std::reverse(
+      successors.begin(),
+      successors.end());
+
+  return successors;
 }
 
 } // namespace
 
-const std::array<DepthMove, 12> &DepthFirstSearch::getPossibleMoves() {
+const std::array<DepthMove, 12> &
+DepthFirstSearch::getPossibleMoves() {
   return POSSIBLE_MOVES;
 }
 
 std::vector<DepthSuccessor>
-DepthFirstSearch::generateSuccessors(const Cube &state) {
+DepthFirstSearch::generateSuccessors(
+    const Cube &state) {
   std::vector<DepthSuccessor> successors;
   successors.reserve(POSSIBLE_MOVES.size());
 
   for (const DepthMove &move : POSSIBLE_MOVES) {
     Cube nextState = state;
-    nextState.rotate(move.axis, move.layer, move.clockwise);
+
+    nextState.rotate(
+        move.axis,
+        move.layer,
+        move.clockwise);
 
     successors.push_back({
         nextState,
@@ -62,16 +158,22 @@ DepthFirstSearch::generateSuccessors(const Cube &state) {
   return successors;
 }
 
-std::string DepthFirstSearch::createStateKey(const Cube &state) {
+std::string
+DepthFirstSearch::createStateKey(
+    const Cube &state) {
   std::string key;
   key.reserve(8 * 15);
 
-  for (const Cubie &cubie : state.getCubies()) {
-    for (int coordinate : cubie.position) {
-      key.push_back(static_cast<char>(coordinate));
+  for (const Cubie &cubie :
+       state.getCubies()) {
+    for (int coordinate :
+         cubie.position) {
+      key.push_back(
+          static_cast<char>(coordinate));
     }
 
-    for (const Color &color : cubie.colors) {
+    for (const Color &color :
+         cubie.colors) {
       appendColor(key, color);
     }
   }
@@ -80,82 +182,69 @@ std::string DepthFirstSearch::createStateKey(const Cube &state) {
 }
 
 DepthSearchResult
-DepthFirstSearch::depthLimitedSearch(const Cube &initialState,
-                                     int depthLimit) {
+DepthFirstSearch::depthLimitedSearch(
+    const Cube &initialState,
+    int depthLimit) {
   if (depthLimit < 0) {
     throw std::invalid_argument(
         "O limite de profundidade nao pode ser negativo");
   }
 
+  DepthStructure structure(depthLimit);
+
+  const auto commonResult = executeSearch(
+      SearchNode{initialState, {}, 0},
+      structure,
+      [](const SearchNode &node) {
+        return node.state.isSolved();
+      },
+      generateDepthSuccessors);
+
   DepthSearchResult result;
-  std::vector<SearchNode> stack;
-  stack.push_back({initialState, {}, 0});
 
-  std::unordered_map<std::string, int> bestRemainingDepth;
-  bestRemainingDepth[createStateKey(initialState)] = depthLimit;
+  result.visitedStates =
+      commonResult.visitedStates;
 
-  while (!stack.empty()) {
-    SearchNode current = std::move(stack.back());
-    stack.pop_back();
-    ++result.visitedStates;
+  if (commonResult.solved()) {
+    result.solved = true;
 
-    if (current.state.isSolved()) {
-      result.solved = true;
-      result.solutionDepth = current.depth;
-      result.solution = std::move(current.path);
-      return result;
-    }
+    result.solutionDepth =
+        commonResult.finalNode->depth;
 
-    if (current.depth >= depthLimit) {
-      continue;
-    }
-
-    std::vector<DepthSuccessor> successors = generateSuccessors(current.state);
-    for (auto iterator = successors.rbegin(); iterator != successors.rend();
-         ++iterator) {
-      DepthSuccessor &successor = *iterator;
-
-      if (!current.path.empty() &&
-          areInverseMoves(current.path.back(), successor.move)) {
-        continue;
-      }
-
-      const int nextDepth = current.depth + 1;
-      const int remainingDepth = depthLimit - nextDepth;
-      const std::string key = createStateKey(successor.state);
-      const auto found = bestRemainingDepth.find(key);
-
-      if (found != bestRemainingDepth.end() &&
-          found->second >= remainingDepth) {
-        continue;
-      }
-
-      bestRemainingDepth[key] = remainingDepth;
-      std::vector<DepthMove> nextPath = current.path;
-      nextPath.push_back(successor.move);
-      stack.push_back(
-          {std::move(successor.state), std::move(nextPath), nextDepth});
-    }
+    result.solution =
+        std::move(
+            commonResult.finalNode->path);
   }
 
   return result;
 }
 
 DepthSearchResult
-DepthFirstSearch::iterativeDeepeningSearch(const Cube &initialState,
-                                           int maximumDepth) {
+DepthFirstSearch::iterativeDeepeningSearch(
+    const Cube &initialState,
+    int maximumDepth) {
   if (maximumDepth < 0) {
     throw std::invalid_argument(
         "A profundidade maxima nao pode ser negativa");
   }
 
   DepthSearchResult finalResult;
-  for (int limit = 0; limit <= maximumDepth; ++limit) {
-    DepthSearchResult currentResult = depthLimitedSearch(initialState, limit);
-    finalResult.visitedStates += currentResult.visitedStates;
+
+  for (int limit = 0;
+       limit <= maximumDepth;
+       ++limit) {
+    DepthSearchResult currentResult =
+        depthLimitedSearch(
+            initialState,
+            limit);
+
+    finalResult.visitedStates +=
+        currentResult.visitedStates;
 
     if (currentResult.solved) {
-      currentResult.visitedStates = finalResult.visitedStates;
+      currentResult.visitedStates =
+          finalResult.visitedStates;
+
       return currentResult;
     }
   }
