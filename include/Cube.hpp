@@ -21,6 +21,7 @@ public:
   // Horario olhando a camada de fora do cubo.
   void rotate(int axis, int layer, bool clockwise);
   void shuffle();
+  void shuffle(unsigned int seed, int moveCount);
   bool isSolved() const;
 
 private:
