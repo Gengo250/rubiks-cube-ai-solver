@@ -451,28 +451,26 @@ void Menu::draw() const {
   }
   drawStatus();
 }
-
 void Menu::drawStatus() const {
-  int y = STATUS_Y;
+  int y = STATUS_Y; 
+
+  // Mensagem de Status ("Calculando", "Solução encontrada")
   if (!status.empty()) {
-    drawText(status.c_str(), MENU_WIDTH + MARGIN, y, 18,
-             playing() ? TEXT : RESULT);
-    y += 26;
+    drawText(status.c_str(), MENU_WIDTH + MARGIN, y, 18, playing() ? TEXT : RESULT);
+    y += 32; 
   }
 
+  // Se não tem solução para mostrar, encerra o desenho
   if (!solution.solved) {
     return;
   }
 
-  drawText(TextFormat("%d movimentos HTM   %lld estados visitados   %.1f ms",
+  // Estatísticas de Desempenho (Nós, Tempo, Qtd Movimentos)
+  drawText(TextFormat("%d movimentos HTM   %lld nos expandidos   %.1f ms",
                       static_cast<int>(solution.turns.size()),
                       solution.expanded, solution.milliseconds),
            MENU_WIDTH + MARGIN, y, 16, HINT);
-
-  if (!solution.notation.empty()) {
-    drawText(solution.notation.c_str(), MENU_WIDTH + MARGIN, y, 20, TEXT);
-    y += 26;
-  }
+  y += 32; 
 
   if (playing()) {
     if (playbackIndex < setupCount) {
@@ -486,6 +484,11 @@ void Menu::drawStatus() const {
                           turnName(playback[playbackIndex]).c_str()),
                MENU_WIDTH + MARGIN, y, 16, HINT);
     }
+    y += 32; 
+  }
+
+  if (!solution.notation.empty()) {
+    drawText(solution.notation.c_str(), MENU_WIDTH + MARGIN, y, 20, TEXT);
   }
 }
 
