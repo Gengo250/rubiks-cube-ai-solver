@@ -457,18 +457,16 @@ void Menu::draw() const {
   }
   drawStatus();
 }
-
 void Menu::drawStatus() const {
-  // Define o ponto de partida vertical (logo abaixo do desenho do cubo)
   int y = STATUS_Y; 
 
-  // 1. Mensagem de Status ("Calculando...", "Solução encontrada")
+  // Mensagem de Status ("Calculando", "Solução encontrada")
   if (!status.empty()) {
     drawText(status.c_str(), MENU_WIDTH + MARGIN, y, 18, playing() ? TEXT : RESULT);
     y += 32; 
   }
 
-  // Se não tem solução para mostrar, encerra o desenho do texto aqui
+  // Se não tem solução para mostrar, encerra o desenho
   if (!solution.solved) {
     return;
   }
