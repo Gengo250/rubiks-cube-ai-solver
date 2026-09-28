@@ -3,6 +3,8 @@
 #include "DepthFirstSearch.hpp"
 #include "Cube.hpp"
 #include <array>
+#include <limits>
+#include <random>
 #include <vector>
 #include <string>
 #include <unordered_set>
@@ -24,7 +26,6 @@ constexpr int NET_X =
 constexpr int NET_Y = (WINDOW_HEIGHT - (3 * FACE_STEP - 34)) / 2;
 constexpr int STATUS_Y = NET_Y + 3 * FACE_STEP - 10;
 constexpr int IDDFS_MAXIMUM_DEPTH = 8;
-constexpr unsigned int SHUFFLE_SEED = 250;
 constexpr int SHUFFLE_MOVE_COUNT = 5;
 // Um movimento a cada doze quadros: rapido de assistir, lento de perder.
 constexpr int FRAMES_PER_MOVE = 12;
@@ -176,6 +177,15 @@ Rectangle optionRect(int index) {
           static_cast<float>(ITEM_HEIGHT)};
 }
 
+// Cada embaralhada sorteia uma seed nova; a seed continua visivel no status
+// para permitir reproduzir um caso especifico depois.
+unsigned int nextShuffleSeed() {
+  static std::mt19937 engine{std::random_device{}()};
+  static std::uniform_int_distribution<unsigned int> distribution(
+      0, std::numeric_limits<unsigned int>::max());
+  return distribution(engine);
+}
+
 } 
 
 Menu::Menu() {
@@ -280,18 +290,20 @@ bool Menu::handle(int choice) {
   case Action::Render:
     cubeVisible = true;
     break;
-  case Action::Shuffle:
+  case Action::Shuffle: {
+    const unsigned int shuffleSeed = nextShuffleSeed();
     cube = Cube();
-    cube.shuffle(SHUFFLE_SEED, SHUFFLE_MOVE_COUNT);
+    cube.shuffle(shuffleSeed, SHUFFLE_MOVE_COUNT);
     solution = Solution{};
     activeSolver.clear();
     playback.clear();
     playbackIndex = 0;
     setupCount = 0;
     frames = 0;
-    status = "Cubo embaralhado | Seed: " + std::to_string(SHUFFLE_SEED) +
+    status = "Cubo embaralhado | Seed: " + std::to_string(shuffleSeed) +
            " | Movimentos: " + std::to_string(SHUFFLE_MOVE_COUNT);
     break;
+  }
   
   case Action::Reset:
     cube = Cube();
