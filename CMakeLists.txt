@@ -18,9 +18,10 @@ find_package(raylib 6.0 REQUIRED)
 
 add_library(rubiks_cube_core
     src/Cube.cpp
-    src/DepthFirstSearch.cpp
     src/Heuristic.cpp
+    src/DepthFirstSearch.cpp
     src/Solver.cpp
+    src/BFS_Solver.cpp
 )
 
 target_include_directories(rubiks_cube_core
@@ -28,6 +29,7 @@ target_include_directories(rubiks_cube_core
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
+# Cubie usa Color da propria raylib, inclusive no header publico.
 target_link_libraries(rubiks_cube_core
     PUBLIC
         raylib
@@ -50,3 +52,5 @@ add_custom_command(TARGET rubiks_cube_ai_solver POST_BUILD
             $<TARGET_FILE_DIR:rubiks_cube_ai_solver>/assets
     COMMENT "Copiando assets/ para a pasta do executavel"
 )
+
+

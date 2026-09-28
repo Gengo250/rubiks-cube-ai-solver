@@ -1,7 +1,11 @@
 #include "Menu.hpp"
-
+#include "BFS_Solver.hpp"
+#include "DepthFirstSearch.hpp"
+#include "Cube.hpp"
 #include <array>
-
+#include <vector>
+#include <string>
+#include <unordered_set>
 namespace {
 
 constexpr int WINDOW_WIDTH = 1810;
@@ -124,8 +128,9 @@ const char *hintFor(MenuScreen screen) {
   return "Escolha quem resolve o cubo.";
 }
 
+// Camada 1 dos eixos X, Y e Z: as faces Right, Upper e Front.
 std::string turnName(const Turn &turn) {
-  static constexpr const char *FACES[3][2] = {
+    static constexpr const char *FACES[3][2] = {
       {"L", "R"},
       {"D", "U"},
       {"B", "F"},
@@ -164,7 +169,7 @@ Rectangle optionRect(int index) {
           static_cast<float>(ITEM_HEIGHT)};
 }
 
-} // namespace
+} 
 
 Menu::Menu() {
   InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "MENU - CUBE 2X2X2");
@@ -187,7 +192,7 @@ Menu::~Menu() {
 void Menu::run() {
   bool running = true;
   while (running && !WindowShouldClose()) {
-    const int choice = readChoice();
+    const int choice = pendenteBFS ? -1 : readChoice();
     if (playing()) {
       advancePlayback();
     } else if (choice >= 0) {
@@ -197,6 +202,11 @@ void Menu::run() {
     BeginDrawing();
     draw();
     EndDrawing();
+
+    if (pendenteBFS) {
+        startSolveBFS();   
+        pendenteBFS = false; 
+    }
   }
 }
 
@@ -276,7 +286,8 @@ bool Menu::handle(int choice) {
     startDepthSolve();
     break;
   case Action::SolveBreadth:
-    status = "Busca em largura nao implementada. Use a busca A*.";
+    status = "Busca em largura sendo feita, aguarde alguns segundos" ;
+    pendenteBFS = true;
     break;
   case Action::SolveAStar:
     startSolve();
@@ -284,6 +295,84 @@ bool Menu::handle(int choice) {
   }
   return true;
 }
+
+void Menu::startSolve() {
+  cubeVisible = true;
+  solution = solveAStar(cube);
+  playback = solution.setup;
+  playback.insert(playback.end(), solution.turns.begin(), solution.turns.end());
+  setupCount = solution.setup.size();
+  playbackIndex = 0;
+  frames = 0;
+
+  if (!solution.solved) {
+    status = "A busca nao encontrou solucao.";
+  } else if (solution.turns.empty()) {
+    status = "O cubo ja esta resolvido.";
+  } else {
+    status = "Solucao encontrada. Aplicando os movimentos.";
+  }
+}
+
+void Menu::startSolveBFS() {
+  cubeVisible = true;
+  int totalMovimentos = 0;
+  int estadosExplorados = 0;
+
+  std::vector<CubeMove> bfsPath = solveCubeBFS(cube, totalMovimentos, estadosExplorados);
+
+  playback.clear();
+  setupCount = 0;
+  playbackIndex = 0;
+  frames = 0;
+
+  if (totalMovimentos > 0) {
+    for (const CubeMove &move : bfsPath) {
+        Turn t;
+        t.axis = move.axis;
+        t.layer = move.layer;
+        t.clockwise = move.clockwise;
+        t.half = false; 
+        
+        playback.push_back(t);
+    }
+    
+    solution.solved = true;
+    solution.turns = playback; 
+    solution.expanded = estadosExplorados; 
+    solution.milliseconds = 0.0f; 
+    
+    status = "Solucao BFS encontrada. Aplicando os movimentos.";
+    
+  } else if (cube.isSolved()) {
+    solution.solved = true;
+    status = "O cubo ja esta resolvido.";
+  } else {
+    solution.solved = false;
+    status = "A BFS nao encontrou solucao (limite atingido ou erro).";
+  }
+}
+
+bool Menu::playing() const { return playbackIndex < playback.size(); }
+
+void Menu::advancePlayback() {
+  if (++frames < FRAMES_PER_MOVE) {
+    return;
+  }
+  frames = 0;
+
+  const Turn &turn = playback[playbackIndex];
+  cube.rotate(turn.axis, turn.layer, turn.clockwise);
+  if (turn.half) {
+    cube.rotate(turn.axis, turn.layer, turn.clockwise);
+  }
+  ++playbackIndex;
+
+  if (!playing() && solution.solved) {
+    status = "Cubo resolvido pela busca " + activeSolver + ".";
+  }
+}
+
 
 void Menu::startDepthSolve() {
   cubeVisible = true;
@@ -322,44 +411,6 @@ void Menu::startDepthSolve() {
   }
 }
 
-void Menu::startSolve() {
-  cubeVisible = true;
-  solution = solveAStar(cube);
-  playback = solution.setup;
-  playback.insert(playback.end(), solution.turns.begin(), solution.turns.end());
-  setupCount = solution.setup.size();
-  playbackIndex = 0;
-  frames = 0;
-  activeSolver = "A*";
-
-  if (!solution.solved) {
-    status = "A busca nao encontrou solucao.";
-  } else if (solution.turns.empty()) {
-    status = "O cubo ja esta resolvido.";
-  } else {
-    status = "Solucao encontrada. Aplicando os movimentos.";
-  }
-}
-
-bool Menu::playing() const { return playbackIndex < playback.size(); }
-
-void Menu::advancePlayback() {
-  if (++frames < FRAMES_PER_MOVE) {
-    return;
-  }
-  frames = 0;
-
-  const Turn &turn = playback[playbackIndex];
-  cube.rotate(turn.axis, turn.layer, turn.clockwise);
-  if (turn.half) {
-    cube.rotate(turn.axis, turn.layer, turn.clockwise);
-  }
-  ++playbackIndex;
-
-  if (!playing() && solution.solved) {
-    status = "Cubo resolvido pela busca " + activeSolver + ".";
-  }
-}
 
 void Menu::drawText(const char *text, int x, int y, int size,
                     Color color) const {
@@ -413,7 +464,6 @@ void Menu::drawStatus() const {
                       static_cast<int>(solution.turns.size()),
                       solution.expanded, solution.milliseconds),
            MENU_WIDTH + MARGIN, y, 16, HINT);
-  y += 24;
 
   if (!solution.notation.empty()) {
     drawText(solution.notation.c_str(), MENU_WIDTH + MARGIN, y, 20, TEXT);

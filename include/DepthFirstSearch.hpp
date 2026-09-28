@@ -35,4 +35,5 @@ public:
                                               int depthLimit);
   static DepthSearchResult iterativeDeepeningSearch(const Cube &initialState,
                                                     int maximumDepth);
+
 };

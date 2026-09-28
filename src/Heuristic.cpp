@@ -149,8 +149,7 @@ Tables &tables() {
 }
 
 // Geometria do giro lida do Cube real: destino de cada slot e transposicao
-// dos rotulos. Nenhum dos dois depende de qual peca ocupa o slot, e e isso
-// que torna as projecoes das PDBs homomorficas.
+// dos rotulos. Nenhum dos dois depende de qual peca ocupa o slot
 void buildGeometry(Tables &t) {
   for (int move = 0; move < MOVE_COUNT; ++move) {
     const int axis = move / 3;
