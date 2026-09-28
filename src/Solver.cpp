@@ -161,7 +161,7 @@ Solution solveAStar(const Cube &cube) {
 
   Solution solution;
 
- 
+
   Cube working = cube;
 
   for (const heuristic::Spin &spin :
