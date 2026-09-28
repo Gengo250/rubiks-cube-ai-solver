@@ -1,7 +1,8 @@
 #pragma once
-
 #include "Cube.hpp"
 #include "Solver.hpp"
+#include "DepthFirstSearch.hpp"
+#include "BFS_Solver.hpp"
 
 #include <string>
 #include <vector>
@@ -23,6 +24,8 @@ private:
   bool handle(int choice);
   void openScreen(MenuScreen next);
   void startSolve();
+  void startDepthSolve();
+  void startSolveBFS();
   bool playing() const;
   void advancePlayback();
   void draw() const;
@@ -36,6 +39,7 @@ private:
   int selected = 0;
   bool cubeVisible = false;
   std::string status;
+  std::string activeSolver;
 
   Solution solution;
   // Reorientacao e solucao na ordem em que sao aplicadas ao cubo.
@@ -43,4 +47,6 @@ private:
   std::size_t playbackIndex = 0;
   std::size_t setupCount = 0;
   int frames = 0;
+
+  bool pendenteBFS = false;
 };
