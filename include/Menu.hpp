@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Cube.hpp"
+#include "DepthFirstSearch.hpp"
 #include "Solver.hpp"
 
 #include <string>
@@ -22,6 +23,7 @@ private:
   int readChoice();
   bool handle(int choice);
   void openScreen(MenuScreen next);
+  void startDepthSolve();
   void startSolve();
   bool playing() const;
   void advancePlayback();
@@ -36,6 +38,7 @@ private:
   int selected = 0;
   bool cubeVisible = false;
   std::string status;
+  std::string activeSolver;
 
   Solution solution;
   // Reorientacao e solucao na ordem em que sao aplicadas ao cubo.

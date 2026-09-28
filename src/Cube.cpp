@@ -52,3 +52,30 @@ void Cube::shuffle() {
     rotate(axis(engine), bit(engine), bit(engine) == 1);
   }
 }
+
+bool Cube::isSolved() const {
+  for (int axis = 0; axis < 3; ++axis) {
+    for (int layer = 0; layer < 2; ++layer) {
+      Color faceColor{};
+      bool firstCubie = true;
+
+      for (const Cubie &cubie : cubies) {
+        if (cubie.position[axis] != layer) {
+          continue;
+        }
+
+        if (firstCubie) {
+          faceColor = cubie.colors[axis];
+          firstCubie = false;
+        } else if (faceColor.r != cubie.colors[axis].r ||
+                   faceColor.g != cubie.colors[axis].g ||
+                   faceColor.b != cubie.colors[axis].b ||
+                   faceColor.a != cubie.colors[axis].a) {
+          return false;
+        }
+      }
+    }
+  }
+
+  return true;
+}
