@@ -359,7 +359,7 @@ void Menu::advancePlayback() {
   ++playbackIndex;
 
   if (!playing() && solution.solved) {
-    status = "Cubo resolvido pela busca A*.";
+    status = "Cubo resolvido.";
   }
 }
 

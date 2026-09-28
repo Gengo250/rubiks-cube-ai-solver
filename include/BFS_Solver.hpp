@@ -12,6 +12,8 @@ struct CubeMove {
 struct BFSNode {
     Cube state;
     std::vector<CubeMove> path;
+    int ultEixo = -1;
+    
 };
 
 // Retorna agora um vetor de estruturas CubeMove para compatibilidade com o Menu
