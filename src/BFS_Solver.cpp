@@ -31,18 +31,18 @@ inline uint64_t getCompactState(const Cube& cube) {
         // Ignora a peça âncora (0,0,0)
         if (cubie.position[0] == 0 && cubie.position[1] == 0 && cubie.position[2] == 0) continue;
 
+        // Cada posição irá ter 3 bits para cada coordenada
         uint64_t pos = (cubie.position[0] << 2) | (cubie.position[1] << 1) | cubie.position[2];
         
 
         uint64_t cX = colorToBits(cubie.colors[0]);
         uint64_t cY = colorToBits(cubie.colors[1]);
-        uint64_t cZ = colorToBits(cubie.colors[2]);
 
-        // Empacota os 12 bits desta peça no número principal
-        uint64_t pieceData = (pos << 9) | (cX << 6) | (cY << 3) | cZ;
+        // Empacota os 9 bits( 3 posição + 6 cores nas peças) desta peça no número principal
+        uint64_t pieceData =  (pos << 6) | (cX << 3)  | cY;
         state |= (pieceData << shift);
         
-        shift += 12; 
+        shift += 9; 
     }
     return state;
 }

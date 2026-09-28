@@ -319,8 +319,9 @@ void Menu::startSolveBFS() {
   int totalMovimentos = 0;
   int estadosExplorados = 0;
 
+  const double started = GetTime();
   std::vector<CubeMove> bfsPath = solveCubeBFS(cube, totalMovimentos, estadosExplorados);
-
+  const double tempo_ms = (GetTime() - started) * 1000.0;
   playback.clear();
   setupCount = 0;
   playbackIndex = 0;
@@ -340,15 +341,18 @@ void Menu::startSolveBFS() {
     solution.solved = true;
     solution.turns = playback; 
     solution.expanded = estadosExplorados; 
-    solution.milliseconds = 0.0f; 
+    solution.milliseconds = tempo_ms; 
     
     status = "Solucao BFS encontrada. Aplicando os movimentos.";
     
   } else if (cube.isSolved()) {
     solution.solved = true;
+    solution.milliseconds = tempo_ms;
     status = "O cubo ja esta resolvido.";
   } else {
     solution.solved = false;
+    solution.expanded = estadosExplorados;
+    solution.milliseconds = tempo_ms;
     status = "A BFS nao encontrou solucao (limite atingido ou erro).";
   }
 }
