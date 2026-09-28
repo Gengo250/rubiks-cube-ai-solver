@@ -1,114 +1,153 @@
-
-#include "Cube.hpp" 
 #include "BFS_Solver.hpp"
-#include "Menu.hpp"
-#include <string>
-#include <vector>
-#include <unordered_set>
-#include <queue>
-#include <stdexcept>
+#include "SearchLoop.hpp"
+
 #include <cstdint>
+#include <queue>
+#include <unordered_set>
+#include <utility>
 
+namespace {
 
-// Gera a assinatura de memória, ou seja, crio o estado a partir de todos os indices que descrevem o cubo atual, desde sua posição á sua cor
-inline uint64_t colorToBits(Color c) {
-    if (c.r == 230) return 0; // Laranja
-    if (c.r == 200) return 1; // Vermelho
-    if (c.r == 235) return 2; // Amarelo
-    if (c.r == 240) return 3; // Branco
-    if (c.r == 45)  return 4; // Azul
-    if (c.r == 40)  return 5; // Verde
-    return 7;
+constexpr std::size_t MAX_MOV = 10;
+constexpr std::size_t MAX_NOS = 2000000;
+
+// Converte a cor para três bits.
+std::uint64_t colorToBits(Color color) {
+  if (color.r == 230) {
+    return 0;
+  }
+  if (color.r == 200) {
+    return 1;
+  }
+  if (color.r == 235) {
+    return 2;
+  }
+  if (color.r == 240) {
+    return 3;
+  }
+  if (color.r == 45) {
+    return 4;
+  }
+  if (color.r == 40) {
+    return 5;
+  }
+  return 7;
 }
 
+// Compacta o estado do cubo em 64 bits.
+std::uint64_t getCompactState(const Cube &cube) {
+  std::uint64_t state = 0;
+  int shift = 0;
 
-// O estado inteiro compactado em 64 bits (sem alocação de memória)
-inline uint64_t getCompactState(const Cube& cube) {
-    uint64_t state = 0;
-    int shift = 0;
-    
-    for (const auto& cubie : cube.getCubies()) {
-        // Ignora a peça âncora (0,0,0)
-        if (cubie.position[0] == 0 && cubie.position[1] == 0 && cubie.position[2] == 0) continue;
-
-        // Cada posição irá ter 3 bits para cada coordenada
-        uint64_t pos = (cubie.position[0] << 2) | (cubie.position[1] << 1) | cubie.position[2];
-        
-
-        uint64_t cX = colorToBits(cubie.colors[0]);
-        uint64_t cY = colorToBits(cubie.colors[1]);
-
-        // Empacota os 9 bits( 3 posição + 6 cores nas peças) desta peça no número principal
-        uint64_t pieceData =  (pos << 6) | (cX << 3)  | cY;
-        state |= (pieceData << shift);
-        
-        shift += 9; 
+  for (const Cubie &cubie : cube.getCubies()) {
+    if (cubie.position[0] == 0 &&
+        cubie.position[1] == 0 &&
+        cubie.position[2] == 0) {
+      continue;
     }
-    return state;
+
+    const std::uint64_t position =
+        (cubie.position[0] << 2) |
+        (cubie.position[1] << 1) |
+        cubie.position[2];
+
+    const std::uint64_t colorX = colorToBits(cubie.colors[0]);
+    const std::uint64_t colorY = colorToBits(cubie.colors[1]);
+    const std::uint64_t pieceData =
+        (position << 6) | (colorX << 3) | colorY;
+
+    state |= pieceData << shift;
+    shift += 9;
+  }
+
+  return state;
 }
 
+// A BFS utiliza uma fila: primeiro que entra é o primeiro que sai.
+class BFSStructure {
+public:
+  using NodeType = BFSNode;
 
-
-
-std::vector<CubeMove> solveCubeBFS(Cube initialCube, int &qtd_movimentos, int &nosvisitados) {
-    std::queue<BFSNode> queue;
-    std::unordered_set<uint64_t> visited;
-    int cont = 0;  //Contador de estados visitados
-
-    const size_t MAX_MOV = 10;
-    const size_t MAX_NOS = 2000000;
-
-    //  Prepara a busca iniciando com o estado atual do cubo
-    queue.push({initialCube, {}});
-    visited.insert(getCompactState(initialCube));
-
-    // Loop de expansão para coninuar a movimentação 
-    while (!queue.empty()) {
-        BFSNode current = queue.front();
-        queue.pop();
-        // Verificação do cubo resolvido
-        if (current.state.isSolved()) {
-            qtd_movimentos = current.path.size();
-            nosvisitados = cont;
-            return current.path; // Retorna a lista de movimentos vitoriosa
-        }
-
-        if(current.path.size() >= MAX_MOV){
-          continue;
-        }
-        if(cont >= MAX_NOS){
-          break;
-        }
-
-      for (int axis = 0; axis < 3; ++axis) {
-
-          if (axis == current.ultEixo) {
-            continue; 
-          }
-
-        int layer = 1;
-        for (bool clockwise : {true, false}) {
-            Cube nextCube = current.state;
-            nextCube.rotate(axis, layer, clockwise);
-
-            std::uint64_t nextStateString = getCompactState(nextCube);
-
-        if (visited.find(nextStateString) == visited.end()) {
-            visited.insert(nextStateString);
-            
-            BFSNode nextNode;
-            nextNode.state = nextCube;
-            nextNode.path = current.path; 
-            nextNode.path.push_back({axis, layer, clockwise}); 
-            nextNode.ultEixo = axis; 
-
-            cont++; 
-            queue.push(nextNode);
-        }
+  void add(BFSNode node) {
+    if (node.path.size() > MAX_MOV ||
+        discovered.size() >= MAX_NOS) {
+      return;
     }
+
+    const std::uint64_t key = getCompactState(node.state);
+
+    if (discovered.insert(key).second) {
+      states.push(std::move(node));
+    }
+  }
+
+  BFSNode removeNext() {
+    BFSNode node = std::move(states.front());
+    states.pop();
+    return node;
+  }
+
+  bool empty() const {
+    return states.empty();
+  }
+
+private:
+  std::queue<BFSNode> states;
+  std::unordered_set<std::uint64_t> discovered;
+};
+
+std::vector<BFSNode>
+generateBFSSuccessors(const BFSNode &current) {
+  std::vector<BFSNode> successors;
+
+  if (current.path.size() >= MAX_MOV) {
+    return successors;
+  }
+
+  for (int axis = 0; axis < 3; ++axis) {
+    if (axis == current.ultEixo) {
+      continue;
+    }
+
+    for (bool clockwise : {true, false}) {
+      BFSNode next = current;
+      next.state.rotate(axis, 1, clockwise);
+      next.path.push_back({axis, 1, clockwise});
+      next.ultEixo = axis;
+
+      successors.push_back(std::move(next));
+    }
+  }
+
+  return successors;
 }
-    }
+
+} // namespace
+
+std::vector<CubeMove>
+solveCubeBFS(Cube initialCube,
+             int &qtd_movimentos,
+             int &nosvisitados) {
+  BFSStructure structure;
+
+  const auto result = executeSearch(
+      BFSNode{initialCube, {}, -1},
+      structure,
+      [](const BFSNode &node) {
+        return node.state.isSolved();
+      },
+      generateBFSSuccessors);
+
+  nosvisitados =
+      static_cast<int>(result.visitedStates);
+
+  if (!result.solved()) {
     qtd_movimentos = 0;
-    nosvisitados = cont;
-    return {}; 
+    return {};
+  }
+
+  qtd_movimentos =
+      static_cast<int>(result.finalNode->path.size());
+
+  return result.finalNode->path;
 }

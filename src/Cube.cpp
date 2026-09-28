@@ -53,6 +53,28 @@ void Cube::shuffle() {
   }
 }
 
+void Cube::shuffle(unsigned int seed, int moveCount) {
+  if (moveCount < 0) {
+    throw std::invalid_argument(
+        "Quantidade de movimentos nao pode ser negativa");
+  }
+
+  std::mt19937 engine(seed);
+  int previousAxis = -1;
+
+  for (int i = 0; i < moveCount; ++i) {
+    int axis = static_cast<int>(engine() % 3);
+
+    while (axis == previousAxis) {
+      axis = static_cast<int>(engine() % 3);
+    }
+
+    const bool clockwise = engine() % 2 == 1;
+    rotate(axis, 1, clockwise);
+    previousAxis = axis;
+  }
+}
+
 bool Cube::isSolved() const {
   for (int axis = 0; axis < 3; ++axis) {
     for (int layer = 0; layer < 2; ++layer) {

@@ -24,6 +24,8 @@ constexpr int NET_X =
 constexpr int NET_Y = (WINDOW_HEIGHT - (3 * FACE_STEP - 34)) / 2;
 constexpr int STATUS_Y = NET_Y + 3 * FACE_STEP - 10;
 constexpr int IDDFS_MAXIMUM_DEPTH = 8;
+constexpr unsigned int SHUFFLE_SEED = 250;
+constexpr int SHUFFLE_MOVE_COUNT = 5;
 // Um movimento a cada doze quadros: rapido de assistir, lento de perder.
 constexpr int FRAMES_PER_MOVE = 12;
 
@@ -46,6 +48,8 @@ enum class Action {
   OpenAi,
   Render,
   Shuffle,
+  Reset,
+  CheckSolved,
   Rotate,
   SolveDepth,
   SolveBreadth,
@@ -67,7 +71,7 @@ constexpr std::array<MenuOption, 3> HOME_OPTIONS = {{
     {"Solve with AI", Action::OpenAi},
 }};
 
-constexpr std::array<MenuOption, 15> MANUAL_OPTIONS = {{
+constexpr std::array<MenuOption, 17> MANUAL_OPTIONS = {{
     {"Back", Action::Back},
     {"Render Cube", Action::Render},
     {"Shuffle Cube", Action::Shuffle},
@@ -83,11 +87,14 @@ constexpr std::array<MenuOption, 15> MANUAL_OPTIONS = {{
     {"Move Lower Counterclockwise", Action::Rotate, 1, 0, false},
     {"Move Rear Clockwise", Action::Rotate, 2, 0, true},
     {"Move Rear Counterclockwise", Action::Rotate, 2, 0, false},
+    {"Reset Cube", Action::Reset},
+    {"Check if Cube is Solved", Action::CheckSolved},
 }};
 
-constexpr std::array<MenuOption, 5> AI_OPTIONS = {{
+constexpr std::array<MenuOption, 6> AI_OPTIONS = {{
     {"Back", Action::Back},
     {"Shuffle Cube", Action::Shuffle},
+    {"Reset Cube", Action::Reset},
     {"Depth-First Search", Action::SolveDepth},
     {"Breadth-First Search", Action::SolveBreadth},
     {"A* Search", Action::SolveAStar},
@@ -123,7 +130,7 @@ const char *hintFor(MenuScreen screen) {
     return "Gire as faces ate resolver o cubo.";
   }
   if (screen == MenuScreen::Ai) {
-    return "Embaralhe e escolha entre IDDFS e A*.";
+    return "Embaralhe e escolha entre BFS, IDDFS e A*.";
   }
   return "Escolha quem resolve o cubo.";
 }
@@ -274,14 +281,45 @@ bool Menu::handle(int choice) {
     cubeVisible = true;
     break;
   case Action::Shuffle:
-    cube.shuffle();
+    cube = Cube();
+    cube.shuffle(SHUFFLE_SEED, SHUFFLE_MOVE_COUNT);
     solution = Solution{};
     activeSolver.clear();
-    status = "Cubo embaralhado.";
+    playback.clear();
+    playbackIndex = 0;
+    setupCount = 0;
+    frames = 0;
+    status = "Cubo embaralhado | Seed: " + std::to_string(SHUFFLE_SEED) +
+           " | Movimentos: " + std::to_string(SHUFFLE_MOVE_COUNT);
     break;
+  
+  case Action::Reset:
+    cube = Cube();
+    cubeVisible = true;
+    solution = Solution{};
+    activeSolver.clear();
+    playback.clear();
+    playbackIndex = 0;
+    setupCount = 0;
+    frames = 0;
+    status = "Cubo resetado para o estado inicial.";
+    break;
+
+  case Action::CheckSolved:
+    status = cube.isSolved() ? "O cubo esta resolvido." : "O cubo nao esta resolvido.";
+    break;
+
   case Action::Rotate:
     cube.rotate(option.axis, option.layer, option.clockwise);
+    solution = Solution{};
+    activeSolver.clear();
+    playback.clear();
+    playbackIndex = 0;
+    setupCount = 0;
+    frames = 0;
+    status = cube.isSolved() ? "O cubo esta resolvido." : "Movimento aplicado";
     break;
+
   case Action::SolveDepth:
     startDepthSolve();
     break;
@@ -298,6 +336,7 @@ bool Menu::handle(int choice) {
 
 void Menu::startSolve() {
   cubeVisible = true;
+  activeSolver = "A*";
   solution = solveAStar(cube);
   playback = solution.setup;
   playback.insert(playback.end(), solution.turns.begin(), solution.turns.end());
@@ -316,6 +355,8 @@ void Menu::startSolve() {
 
 void Menu::startSolveBFS() {
   cubeVisible = true;
+  activeSolver = "BFS";
+  solution = Solution{};
   int totalMovimentos = 0;
   int estadosExplorados = 0;
 
