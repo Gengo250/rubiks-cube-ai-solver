@@ -55,8 +55,8 @@ std::vector<CubeMove> solveCubeBFS(Cube initialCube, int &qtd_movimentos, int &n
     std::unordered_set<uint64_t> visited;
     int cont = 0;  //Contador de estados visitados
 
-    const size_t MAX_MOV = 15;
-    const size_t MAX_NOS = 20000000;
+    const size_t MAX_MOV = 10;
+    const size_t MAX_NOS = 2000000;
 
     //  Prepara a busca iniciando com o estado atual do cubo
     queue.push({initialCube, {}});
