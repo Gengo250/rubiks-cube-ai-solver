@@ -26,6 +26,4 @@ struct Solution {
   double milliseconds = 0.0;
 };
 
-// A* com a heuristica de docs/heuristica-a-estrela.md. Nao altera o cubo
-// recebido: devolve os giros que o chamador aplica.
 Solution solveAStar(const Cube &cube);

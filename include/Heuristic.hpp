@@ -36,7 +36,7 @@ bool moveIsClockwise(int move);
 bool moveIsHalf(int move);
 
 // Giros do cubo inteiro que levam a peca 0 de volta ao slot 0 com a
-// orientacao original. Vazio quando ela ja esta em casa.
+// orientacao original. Vazio quando ela ja esta na posição.
 std::vector<Spin> homingSpins(const Cube &cube);
 
 // Exige a peca 0 em casa; aplique homingSpins antes.
