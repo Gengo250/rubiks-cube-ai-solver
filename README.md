@@ -61,6 +61,14 @@ O menu tem três telas:
   cubo um movimento por vez, com a notação, o número de nós expandidos e o
   tempo no painel da direita.
 
+Nas duas telas de jogo, o bloco **EMBARALHAMENTO** no rodapé do painel esquerdo
+controla o `Shuffle Cube`: a caixa **Seed** fixa a semente e a caixa
+**Movimentos** define quantos giros o embaralhamento aplica. Clique numa caixa
+para digitar, `Tab` alterna entre elas e `Enter` confirma. Seed vazia sorteia
+uma nova e, depois de embaralhar, a seed usada volta para o campo — embaralhar
+de novo sem mexer nos campos reproduz exatamente o mesmo cubo, que é o que
+permite comparar as buscas sobre o mesmo estado.
+
 ```sh
 ctest --test-dir build --output-on-failure
 ```

@@ -10,6 +10,9 @@
 // Telas do menu: escolha inicial, jogo manual e busca por IA.
 enum class MenuScreen { Home, Manual, Ai };
 
+// Caixa de texto que esta recebendo o que o usuario digita.
+enum class InputField { None, Seed, Moves };
+
 class Menu {
 public:
   Menu();
@@ -21,6 +24,7 @@ public:
 
 private:
   int readChoice();
+  void updateInputs();
   bool handle(int choice);
   void openScreen(MenuScreen next);
   void startSolve();
@@ -31,6 +35,7 @@ private:
   void draw() const;
   void drawCube() const;
   void drawStatus() const;
+  void drawInputs() const;
   void drawText(const char *text, int x, int y, int size, Color color) const;
 
   Cube cube;
@@ -40,6 +45,13 @@ private:
   bool cubeVisible = false;
   std::string status;
   std::string activeSolver;
+
+  // Embaralhamento reproduzivel: a mesma seed com a mesma quantidade de
+  // movimentos devolve exatamente o mesmo estado, o que permite comparar
+  // as buscas sobre o mesmo cubo. Seed vazia sorteia uma nova.
+  InputField focusedField = InputField::None;
+  std::string seedInput;
+  std::string movesInput;
 
   Solution solution;
   // Reorientacao e solucao na ordem em que sao aplicadas ao cubo.

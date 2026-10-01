@@ -3,6 +3,7 @@
 #include "DepthFirstSearch.hpp"
 #include "Cube.hpp"
 #include <array>
+#include <cstddef>
 #include <limits>
 #include <random>
 #include <vector>
@@ -26,7 +27,21 @@ constexpr int NET_X =
 constexpr int NET_Y = (WINDOW_HEIGHT - (3 * FACE_STEP - 34)) / 2;
 constexpr int STATUS_Y = NET_Y + 3 * FACE_STEP - 10;
 constexpr int IDDFS_MAXIMUM_DEPTH = 8;
-constexpr int SHUFFLE_MOVE_COUNT = 5;
+constexpr int DEFAULT_SHUFFLE_MOVES = 5;
+// Teto generoso: o 2x2 fica a no maximo 11 giros HTM da solucao, entao
+// embaralhar alem disso so repete estados ja alcancaveis.
+constexpr int MAX_SHUFFLE_MOVES = 50;
+// Dez digitos cobrem todo o intervalo de unsigned int; tres bastam para
+// o teto de movimentos.
+constexpr std::size_t SEED_MAX_DIGITS = 10;
+constexpr std::size_t MOVES_MAX_DIGITS = 3;
+
+// Bloco de entrada ancorado no rodape do painel: fica abaixo da lista mais
+// longa (a tela manual) sem depender da quantidade de opcoes da tela.
+constexpr int INPUT_TOP = WINDOW_HEIGHT - 196;
+constexpr int INPUT_LABEL_WIDTH = 132;
+constexpr int INPUT_HEIGHT = 34;
+constexpr int INPUT_SPACING = 12;
 // Um movimento a cada doze quadros: rapido de assistir, lento de perder.
 constexpr int FRAMES_PER_MOVE = 12;
 
@@ -177,8 +192,16 @@ Rectangle optionRect(int index) {
           static_cast<float>(ITEM_HEIGHT)};
 }
 
-// Cada embaralhada sorteia uma seed nova; a seed continua visivel no status
-// para permitir reproduzir um caso especifico depois.
+Rectangle inputRect(int index) {
+  return {static_cast<float>(MARGIN + INPUT_LABEL_WIDTH),
+          static_cast<float>(INPUT_TOP + 36 +
+                             index * (INPUT_HEIGHT + INPUT_SPACING)),
+          static_cast<float>(MENU_WIDTH - 2 * MARGIN - INPUT_LABEL_WIDTH),
+          static_cast<float>(INPUT_HEIGHT)};
+}
+
+// Usada quando o campo de seed esta vazio; a seed sorteada volta para o
+// campo depois da embaralhada, para permitir repetir o mesmo caso.
 unsigned int nextShuffleSeed() {
   static std::mt19937 engine{std::random_device{}()};
   static std::uniform_int_distribution<unsigned int> distribution(
@@ -186,11 +209,29 @@ unsigned int nextShuffleSeed() {
   return distribution(engine);
 }
 
+// Os campos so aceitam digitos e tem tamanho limitado, entao a conversao
+// precisa cuidar apenas do teto de cada valor.
+unsigned int parseSeed(const std::string &text) {
+  constexpr unsigned long long CEILING =
+      std::numeric_limits<unsigned int>::max();
+  const unsigned long long value = std::stoull(text);
+  return static_cast<unsigned int>(value < CEILING ? value : CEILING);
+}
+
+int parseMoves(const std::string &text) {
+  if (text.empty()) {
+    return DEFAULT_SHUFFLE_MOVES;
+  }
+  const int value = std::stoi(text);
+  return value < MAX_SHUFFLE_MOVES ? value : MAX_SHUFFLE_MOVES;
+}
+
 } 
 
 Menu::Menu() {
   InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "MENU - CUBE 2X2X2");
   SetTargetFPS(60);
+  movesInput = std::to_string(DEFAULT_SHUFFLE_MOVES);
 
   const char *path = TextFormat("%s%s", GetApplicationDirectory(), FONT_FILE);
   font = LoadFontEx(FileExists(path) ? path : FONT_FILE, 64, nullptr, 0);
@@ -228,17 +269,25 @@ void Menu::run() {
 }
 
 int Menu::readChoice() {
+  // O foco de antes tambem conta: o Enter que fecha a caixa nao pode, no
+  // mesmo quadro, acionar a opcao selecionada da lista.
+  const bool wasTyping = focusedField != InputField::None;
+  updateInputs();
+  const bool typing = wasTyping || focusedField != InputField::None;
+
   const int count = optionsFor(screen).count;
   int choice = -1;
 
-  if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S)) {
-    selected = (selected + 1) % count;
-  }
-  if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W)) {
-    selected = (selected - 1 + count) % count;
-  }
-  if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
-    choice = selected;
+  if (!typing) {
+    if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S)) {
+      selected = (selected + 1) % count;
+    }
+    if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W)) {
+      selected = (selected - 1 + count) % count;
+    }
+    if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
+      choice = selected;
+    }
   }
 
   const Vector2 mouse = GetMousePosition();
@@ -259,9 +308,58 @@ int Menu::readChoice() {
   return choice;
 }
 
+// Caixas de texto numericas: clique foca, Tab alterna, Enter confirma e
+// clique fora devolve o teclado para a lista de opcoes.
+void Menu::updateInputs() {
+  if (screen == MenuScreen::Home) {
+    focusedField = InputField::None;
+    return;
+  }
+
+  if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+    const Vector2 mouse = GetMousePosition();
+    if (CheckCollisionPointRec(mouse, inputRect(0))) {
+      focusedField = InputField::Seed;
+    } else if (CheckCollisionPointRec(mouse, inputRect(1))) {
+      focusedField = InputField::Moves;
+    } else {
+      focusedField = InputField::None;
+    }
+  }
+
+  if (IsKeyPressed(KEY_TAB)) {
+    focusedField = focusedField == InputField::Seed ? InputField::Moves
+                                                    : InputField::Seed;
+  }
+
+  if (focusedField == InputField::None) {
+    return;
+  }
+
+  const bool seedFocused = focusedField == InputField::Seed;
+  std::string &text = seedFocused ? seedInput : movesInput;
+  const std::size_t limit = seedFocused ? SEED_MAX_DIGITS : MOVES_MAX_DIGITS;
+
+  for (int key = GetCharPressed(); key > 0; key = GetCharPressed()) {
+    if (key >= '0' && key <= '9' && text.size() < limit) {
+      text += static_cast<char>(key);
+    }
+  }
+
+  if ((IsKeyPressed(KEY_BACKSPACE) || IsKeyPressedRepeat(KEY_BACKSPACE)) &&
+      !text.empty()) {
+    text.pop_back();
+  }
+
+  if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER)) {
+    focusedField = InputField::None;
+  }
+}
+
 void Menu::openScreen(MenuScreen next) {
   screen = next;
   selected = 0;
+  focusedField = InputField::None;
   status.clear();
   activeSolver.clear();
   solution = Solution{};
@@ -291,9 +389,16 @@ bool Menu::handle(int choice) {
     cubeVisible = true;
     break;
   case Action::Shuffle: {
-    const unsigned int shuffleSeed = nextShuffleSeed();
+    const int moveCount = parseMoves(movesInput);
+    const unsigned int shuffleSeed =
+        seedInput.empty() ? nextShuffleSeed() : parseSeed(seedInput);
+    // Os campos passam a mostrar o que foi aplicado de fato: embaralhar de
+    // novo sem mexer neles reproduz exatamente este estado.
+    seedInput = std::to_string(shuffleSeed);
+    movesInput = std::to_string(moveCount);
+
     cube = Cube();
-    cube.shuffle(shuffleSeed, SHUFFLE_MOVE_COUNT);
+    cube.shuffle(shuffleSeed, moveCount);
     solution = Solution{};
     activeSolver.clear();
     playback.clear();
@@ -301,7 +406,7 @@ bool Menu::handle(int choice) {
     setupCount = 0;
     frames = 0;
     status = "Cubo embaralhado | Seed: " + std::to_string(shuffleSeed) +
-           " | Movimentos: " + std::to_string(SHUFFLE_MOVE_COUNT);
+           " | Movimentos: " + std::to_string(moveCount);
     break;
   }
   
@@ -508,8 +613,55 @@ void Menu::draw() const {
     drawText("Escolha \"1 - Render Cube\" para desenhar o cubo aqui.",
              MENU_WIDTH + MARGIN, WINDOW_HEIGHT / 2, 18, HINT);
   }
+  drawInputs();
   drawStatus();
 }
+
+void Menu::drawInputs() const {
+  if (screen == MenuScreen::Home) {
+    return;
+  }
+
+  static constexpr const char *LABELS[2] = {"Seed", "Movimentos"};
+  static constexpr const char *PLACEHOLDERS[2] = {"aleatoria", "5"};
+  const InputField FIELDS[2] = {InputField::Seed, InputField::Moves};
+  const std::string *values[2] = {&seedInput, &movesInput};
+
+  drawText("EMBARALHAMENTO", MARGIN, INPUT_TOP, 20, TITLE);
+
+  for (int i = 0; i < 2; ++i) {
+    const Rectangle rect = inputRect(i);
+    const int textX = static_cast<int>(rect.x) + 12;
+    const int textY = static_cast<int>(rect.y) + 8;
+    const bool active = focusedField == FIELDS[i];
+    const std::string &value = *values[i];
+
+    drawText(LABELS[i], MARGIN, textY, 18, TEXT);
+    DrawRectangleRec(rect, ITEM);
+    DrawRectangleLinesEx(rect, active ? 2.0f : 1.0f, active ? SELECTED : BORDER);
+
+    // Com o campo em foco o texto guia sai da frente do cursor.
+    const bool placeholder = value.empty() && !active;
+    drawText(placeholder ? PLACEHOLDERS[i] : value.c_str(), textX, textY, 18,
+             placeholder ? HINT : TEXT);
+
+    if (active && static_cast<long long>(GetTime() * 2.0) % 2 == 0) {
+      const float width =
+          value.empty() ? 0.0f
+                        : MeasureTextEx(font, value.c_str(), 18.0f, 1.0f).x;
+      DrawRectangle(textX + static_cast<int>(width) + 2, textY, 2, 18,
+                    SELECTED_TEXT);
+    }
+  }
+
+  drawText("Clique na caixa e digite | Tab alterna | Enter confirma",
+           MARGIN, static_cast<int>(inputRect(1).y) + INPUT_HEIGHT + 12, 14,
+           HINT);
+  drawText("Seed vazia sorteia uma nova e aparece aqui depois de embaralhar.",
+           MARGIN, static_cast<int>(inputRect(1).y) + INPUT_HEIGHT + 32, 14,
+           HINT);
+}
+
 void Menu::drawStatus() const {
   int y = STATUS_Y; 
 
